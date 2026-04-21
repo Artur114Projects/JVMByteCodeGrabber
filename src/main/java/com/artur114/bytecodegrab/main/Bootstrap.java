@@ -11,7 +11,6 @@ public class Bootstrap {
         loading.setVisible(true);
 
         SwingUtilities.invokeLater(() -> {
-
             Application.init();
             AppPresenter.init();
 
