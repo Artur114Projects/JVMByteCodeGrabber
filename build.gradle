@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.artur114.bytecodegrab.main'
+archivesBaseName = "ByteCodeGrabber"
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    include; implementation.extendsFrom(include)
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    implementation files(getToolsJar())
+
+    include 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
+    include 'org.apache.logging.log4j:log4j-api:2.0-beta9'
+    include 'com.google.code.gson:gson:2.8.9'
+    include 'com.formdev:flatlaf:3.7'
+}
+
+jar {
+    manifest { attributes 'Main-Class': 'com.artur114.bytecodegrab.main.Main' }
+    from { configurations.include.collect { it.isDirectory() ? it : zipTree(it) } }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def getToolsJar() {
+    def jar = files(
+            "${System.properties['java.home']}/../lib/tools.jar",
+            "${System.properties['java.home']}/lib/tools.jar"
+    ).find { it.exists() }
+    if (jar != null) {
+        return jar
+    }
+    throw new GradleException()
+}
