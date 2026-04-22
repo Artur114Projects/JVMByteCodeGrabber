@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public abstract class SwingWorkerListened<T, V> extends SwingWorker<T, V> {
-    private final IListenBuss<IListener<List<V>>, List<V>> processBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<T>, T> doneBuss = new ArrayListenBuss<>();
+    private final IListenBuss<IListener<List<V>>, List<V>> processBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<T>, T> doneBuss = new ArrayEDITListenBuss<>();
     private boolean disableListen = false;
 
 

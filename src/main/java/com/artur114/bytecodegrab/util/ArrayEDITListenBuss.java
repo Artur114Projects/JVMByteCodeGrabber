@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayListenBuss<L extends IListener<V>, V> implements IListenBuss<L, V> {
+public class ArrayEDITListenBuss<L extends IListener<V>, V> implements IListenBuss<L, V> {
     private final List<L> list = new ArrayList<>();
 
     @Override
@@ -19,8 +19,16 @@ public class ArrayListenBuss<L extends IListener<V>, V> implements IListenBuss<L
 
     @Override
     public void listen(V value) {
-        for (IListener<V> listener : this.list) {
-            listener.listen(value);
+        if (SwingUtilities.isEventDispatchThread()) {
+            for (IListener<V> listener : this.list) {
+                listener.listen(value);
+            }
+        } else {
+            SwingUtilities.invokeLater(() -> {
+                for (IListener<V> listener : this.list) {
+                    listener.listen(value);
+                }
+            });
         }
     }
 

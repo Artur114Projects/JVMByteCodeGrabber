@@ -1,5 +1,6 @@
 package com.artur114.bytecodegrab.agent;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
@@ -48,6 +49,7 @@ public class Grabber extends Thread {
                         LOGGER.warn("Wrong message: {}", message);
                 }
             }
+        } catch (EOFException ignored) {
         } catch (IOException e) {
             e.printStackTrace(System.err);
         } finally {

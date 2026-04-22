@@ -6,11 +6,11 @@ import java.io.File;
 import java.util.List;
 
 public class CodeGrabModel {
-    private final IListenBuss<IListener<List<String>>, List<String>> classesRequestDoneBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<Percent>, Percent> classesRequestProcessBuss = new ArrayListenBuss<>();
+    private final IListenBuss<IListener<List<String>>, List<String>> classesRequestDoneBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<Percent>, Percent> classesRequestProcessBuss = new ArrayEDITListenBuss<>();
 
-    private final IListenBuss<IListener<AsyncByteCodeWriter.IGrabState>, AsyncByteCodeWriter.IGrabState> bytecodeRequestProcessBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<File>, File> bytecodeRequestDoneBuss = new ArrayListenBuss<>();
+    private final IListenBuss<IListener<AsyncByteCodeWriter.IGrabState>, AsyncByteCodeWriter.IGrabState> bytecodeRequestProcessBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<File>, File> bytecodeRequestDoneBuss = new ArrayEDITListenBuss<>();
 
     private AsyncClassesRequester requester;
     private AsyncByteCodeWriter writer;

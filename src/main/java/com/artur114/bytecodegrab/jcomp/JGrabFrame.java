@@ -10,9 +10,9 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 
 public class JGrabFrame extends JFrame {
-    private final IListenBuss<IListener<IGrabStartData>, IGrabStartData> grabListenBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<Void>, Void> grabAbortListenBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<Void>, Void> frameCloseListenBuss = new ArrayListenBuss<>();
+    private final IListenBuss<IListener<IGrabStartData>, IGrabStartData> grabListenBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<Void>, Void> grabAbortListenBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<Void>, Void> frameCloseListenBuss = new ArrayEDITListenBuss<>();
     private final JCardContainer card;
     private boolean isDone = false;
     private JProgressBar progress;

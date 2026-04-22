@@ -8,6 +8,10 @@ import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.tree.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.List;
 import java.util.*;
 
@@ -18,6 +22,7 @@ public class JClassTree extends JPanel {
     private AsyncClassTreeBuilder builder;
     private String currentFilter;
     public boolean keepExpanded = false;
+    private JPopupMenu popup;
     public final JTree tree;
 
     public JClassTree() {
@@ -28,6 +33,72 @@ public class JClassTree extends JPanel {
         this.tree.setShowsRootHandles(true);
         this.tree.setCellRenderer(new ClassTreeCellRenderer());
         this.tree.collapseRow(0);
+        this.tree.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    Rectangle r = allRowsRectangle(tree);
+                    int row = tree.getRowForLocation(e.getX(), e.getY());
+                    boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+
+                    if (!outOfBounds) {
+                        tree.requestFocusInWindow();
+                        popup.show(tree, e.getX(), e.getY());
+                        tree.setSelectionRow(row);
+                    }
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    Rectangle r = allRowsRectangle(tree);
+                    int row = tree.getRowForLocation(e.getX(), e.getY());
+                    boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+
+                    if (!outOfBounds) {
+                        tree.requestFocusInWindow();
+                        popup.show(tree, e.getX(), e.getY());
+                        tree.setSelectionRow(row);
+                    }
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                Rectangle r = allRowsRectangle(tree);
+                int row = tree.getRowForLocation(e.getX(), e.getY());
+                boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (outOfBounds) {
+                        tree.clearSelection();
+                        tree.getParent().requestFocusInWindow();
+                    } else {
+                        tree.requestFocusInWindow();
+                    }
+                }
+                if (!outOfBounds && popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    tree.requestFocusInWindow();
+                    popup.show(tree, e.getX(), e.getY());
+                    tree.setSelectionRow(row);
+                }
+            }
+
+            private Rectangle allRowsRectangle(JTree tree) {
+                if (tree.getRowCount() <= 0) {
+                    return new Rectangle();
+                }
+                Rectangle ret = tree.getRowBounds(0);
+                if (tree.getRowCount() > 1) {
+                    for (int i = 1; i != tree.getRowCount(); i++) {
+                        ret.add(tree.getRowBounds(i));
+                    }
+                }
+                return ret;
+            }
+        });
+
         JScrollPane pane = new JScrollPane(this.tree);
         pane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         this.add(pane, BorderLayout.CENTER);
@@ -98,6 +169,7 @@ public class JClassTree extends JPanel {
 
     public void clear() {
         ((DefaultMutableTreeNode) this.treeModel.getRoot()).removeAllChildren();
+        this.loadedClasses.clear();
         this.treeModel.reload();
     }
 
@@ -169,12 +241,17 @@ public class JClassTree extends JPanel {
     }
 
     public void expandChild(TreePath path, DefaultMutableTreeNode parent) {
+        this.tree.expandPath(path);
+
         for (DefaultMutableTreeNode node : this.child(parent)) {
             TreePath newPath = path.pathByAddingChild(node);
-            this.tree.expandPath(newPath);
-
             this.expandChild(newPath, node);
         }
+    }
+
+    @Override
+    public void setComponentPopupMenu(JPopupMenu popup) {
+        this.popup = popup;
     }
 
     private void fillClasses(List<String> list, DefaultMutableTreeNode node) {

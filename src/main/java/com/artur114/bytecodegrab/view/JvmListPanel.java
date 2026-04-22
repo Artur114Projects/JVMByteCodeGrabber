@@ -9,7 +9,9 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,21 +29,41 @@ public class JvmListPanel extends JPanel {
     public JvmListPanel() {
         setLayout(new BorderLayout());
         this.listModel = new DefaultListModel<>();
-        this.jvmList = new JList<>(this.listModel);
+        this.jvmList = new JList<VirtualMachineDescriptor>(this.listModel) {
+            private JPopupMenu popup = null;
 
-        this.jvmList.setCellRenderer(new JvmListCellRenderer());
-
-        this.jvmList.addMouseListener(new MouseAdapter() {
             @Override
-            public void mousePressed(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    int index = jvmList.locationToIndex(e.getPoint());
-                    if (index != -1 && !jvmList.isSelectedIndex(index)) {
-                        jvmList.setSelectedIndex(index);
+            public void setComponentPopupMenu(JPopupMenu popup) {
+                this.popup = popup;
+            }
+
+            @Override
+            protected void processMouseEvent(MouseEvent e) {
+                if (!this.isEnabled()) {
+                    return;
+                }
+                Rectangle r = this.getCellBounds(0, this.getLastVisibleIndex());
+                boolean outOfBounds = !r.contains(e.getPoint());
+                if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+                    if (outOfBounds) {
+                        this.clearSelection();
+                        this.getParent().requestFocusInWindow();
+                    } else {
+                        this.requestFocusInWindow();
+                        this.setSelectedIndex(this.locationToIndex(e.getPoint()));
+                    }
+                }
+                if (this.popup != null && !outOfBounds && e.isPopupTrigger()) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        this.popup.show(this, e.getX(), e.getY());
                     }
                 }
             }
-        });
+            @Override
+            protected void processMouseMotionEvent(MouseEvent e) {}
+        };
+
+        this.jvmList.setCellRenderer(new JvmListCellRenderer());
 
         JPanel top = new JPanel(new BorderLayout());
         JPanel panelB = new JPanel(new BorderLayout());

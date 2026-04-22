@@ -5,6 +5,7 @@ import com.artur114.bytecodegrab.jcomp.JClassTree;
 import com.artur114.bytecodegrab.jcomp.JGrabFrame;
 import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.util.*;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,17 +14,17 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 public class CodeGrabPanel extends JPanel {
     private static final Logger LOGGER = LogManager.getLogger("View/CodeGrabPanel");
-    private final IListenBuss<IListener<IGrabStartData>, IGrabStartData> grabListenBuss = new ArrayListenBuss<>();
-    private final IListenBuss<IListener<Void>, Void> grabAbortListenBuss = new ArrayListenBuss<>();
+    private final IListenBuss<IListener<IGrabStartData>, IGrabStartData> grabListenBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<Void>, Void> grabAbortListenBuss = new ArrayEDITListenBuss<>();
     private JCardContainer inputCard;
     private JButton disconnectButton;
     private JButton refreshButton;
@@ -218,6 +219,16 @@ public class CodeGrabPanel extends JPanel {
         bottom.add(panelGrab, BorderLayout.EAST);
         bottom.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
         panel.add(bottom, BorderLayout.SOUTH);
+
+
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem copyPid = new JMenuItem("Copy PID", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyName = new JMenuItem("Copy VM Name", Icons.iconQuad("copy.png", 16));
+        popupMenu.add(copyPid);
+        popupMenu.add(copyName);
+        popupMenu.pack();
+
+        grabTree.setComponentPopupMenu(popupMenu);
 
         return panel;
     }
