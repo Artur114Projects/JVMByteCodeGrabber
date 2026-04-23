@@ -2,10 +2,11 @@ import com.artur114.bytecodegrab.util.StringUtils;
 
 public class Test {
     public static void main(String[] args) {
-        String m = "AAAAAAAA SIZE:  [ "+ 2147483647 +" ]";
+        String k = StringUtils.class.getName();
+        String name = k.substring(k.lastIndexOf("."));
 
 
 
-        System.out.println(StringUtils.intPropFromMessage(m, "SIZE"));
+        System.out.println(name);
     }
 }

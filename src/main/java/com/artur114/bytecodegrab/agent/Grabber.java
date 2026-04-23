@@ -6,6 +6,7 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Grabber extends Thread {
     private final IAgentLogger LOGGER = IAgentLogger.createBestLogger();
@@ -85,6 +86,11 @@ public class Grabber extends Thread {
             try {
                 socket.send("PROCESS:[" + i + "]");
                 this.inst.retransformClasses(clazz);
+
+                if (!this.validateNext(socket)) {
+                    LOGGER.info("Class retransform aborted");
+                    return;
+                }
             } catch (UnmodifiableClassException e) {
                 LOGGER.error("Attempt to retransform unmodifiable class, class: {}", clazz);
             } catch (Throwable t) {
@@ -92,6 +98,9 @@ public class Grabber extends Thread {
             }
         }
         socket.send("PROCESS:[" + classList.size() + "]");
+        if (!this.validateNext(socket)) {
+            return;
+        }
 
         this.sendByteCode(socket, grabbedClasses);
     }
@@ -135,14 +144,24 @@ public class Grabber extends Thread {
 
     private void sendByteCode(SocketA out, Map<String, byte[]> classes) throws IOException {
         out.send("CLASS_BYTECODE_LIST_START SIZE:[" + classes.size() + "]");
+        AtomicBoolean ret = new AtomicBoolean(false);
         classes.forEach((key, value) -> {
+            if (ret.get()) {
+                return;
+            }
             try {
                 out.send("CLASS:[" + key + "]");
                 out.send(value);
+
+                ret.set(!this.validateNext(out));
             } catch (IOException e) {
                 e.printStackTrace(System.err);
             }
         });
+        if (ret.get()) {
+            LOGGER.info("Byte code send aborted");
+            return;
+        }
         out.send("CLASS_BYTECODE_LIST_END");
     }
 
@@ -185,6 +204,20 @@ public class Grabber extends Thread {
             return this.isUsefulClass(clazz);
         } catch (Throwable t) {
             return false;
+        }
+    }
+
+    private boolean validateNext(SocketA connection) throws IOException {
+        String ret = connection.waitForMessage();
+
+        switch (ret) {
+            case "NEXT":
+                return true;
+            case "ABORT":
+                return false;
+            default:
+                LOGGER.warn("Wrong reply {}", ret);
+                return false;
         }
     }
 

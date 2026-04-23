@@ -1,7 +1,5 @@
 package com.artur114.bytecodegrab.util;
 
-import javax.swing.*;
-
 public class Percent {
     private boolean isIndeterminate = false;
     private float percent = 0;
@@ -45,15 +43,39 @@ public class Percent {
         return this.isIndeterminate;
     }
 
-    public int x1k() {
+    public float x1F() {
+        return this.percent;
+    }
+
+    public int x1I() {
+        return (int) this.percent;
+    }
+
+    public float x100F() {
+        return this.percent * 100.0F;
+    }
+
+    public int x100I() {
+        return (int) ((int) this.percent * 100.0F);
+    }
+
+    public int x1kI() {
         return (int) (this.percent * 1000.0F);
     }
 
-    public int x10k() {
+    public float x1kF() {
+        return this.percent * 1000.0F;
+    }
+
+    public int x10kI() {
         return (int) (this.percent * 10000.0F);
     }
 
-    public int x100k() {
+    public float x10kF() {
+        return this.percent * 10000.0F;
+    }
+
+    public int x100kI() {
         return (int) (this.percent * 100000.0F);
     }
 }

@@ -5,17 +5,18 @@ import com.artur114.bytecodegrab.jcomp.JClassTree;
 import com.artur114.bytecodegrab.jcomp.JGrabFrame;
 import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.util.*;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -24,10 +25,10 @@ import java.util.List;
 public class CodeGrabPanel extends JPanel {
     private static final Logger LOGGER = LogManager.getLogger("View/CodeGrabPanel");
     private final IListenBuss<IListener<IGrabStartData>, IGrabStartData> grabListenBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<ActionEvent>, ActionEvent> disconnectListenBuss = new ArrayEDITListenBuss<>();
+    private final IListenBuss<IListener<ActionEvent>, ActionEvent> refreshListenBuss = new ArrayEDITListenBuss<>();
     private final IListenBuss<IListener<Void>, Void> grabAbortListenBuss = new ArrayEDITListenBuss<>();
     private JCardContainer inputCard;
-    private JButton disconnectButton;
-    private JButton refreshButton;
     private JProgressBar bar;
     public final JClassTree inputTree;
     public final JClassTree grabTree;
@@ -203,11 +204,8 @@ public class CodeGrabPanel extends JPanel {
 
                 if (i == 0) {
                     field.setText(chooser.getSelectedFile().toString());
-
-                    this.showGrabDialog(new File(field.getText()));
+                    this.showGrabDialog(chooser.getSelectedFile());
                 }
-
-
             } else {
                 this.showGrabDialog(file);
             }
@@ -222,11 +220,77 @@ public class CodeGrabPanel extends JPanel {
 
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem copyPid = new JMenuItem("Copy PID", Icons.iconQuad("copy.png", 16));
-        JMenuItem copyName = new JMenuItem("Copy VM Name", Icons.iconQuad("copy.png", 16));
-        popupMenu.add(copyPid);
+        JMenuItem remove = new JMenuItem("Remove", Icons.iconQuad("remove.png", 14));
+        popupMenu.add(remove);
+
+
+        remove.addActionListener(e -> this.grabTree.removeClassNames(this.grabTree.selectedClasses()));
+        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand.png", 16));
+        expand.addActionListener(e -> grabTree.expandSelected());
+        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse.png", 16));
+        collapse.addActionListener(e -> grabTree.collapseSelected());
+        JPopupMenu.Separator separatorEx = new JPopupMenu.Separator();
+        popupMenu.add(separatorEx);
+        popupMenu.add(expand);
+        popupMenu.add(collapse);
+        popupMenu.addSeparator();
+
+        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy.png", 16));
+        copyPackage.addActionListener(e -> {
+            List<String> list = grabTree.selectedClasses();
+            if (list.size() == 1) {
+                String selected = list.get(0);
+                String toCopy = selected.substring(0, selected.lastIndexOf("."));
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
+            }
+        });
+        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy.png", 16));
+        copyName.addActionListener(e -> {
+            List<String> list = grabTree.selectedClasses();
+            if (list.size() == 1) {
+                String selected = list.get(0);
+                String toCopy = selected.substring(selected.lastIndexOf(".") + 1);
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
+            }
+        });
+        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy.png", 16));
+        copyFullName.addActionListener(e -> {
+            List<String> list = grabTree.selectedClasses();
+            if (list.size() == 1) {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(list.get(0)), null);
+            }
+        });
+        JPopupMenu.Separator separator = new JPopupMenu.Separator();
+        popupMenu.add(copyFullName);
         popupMenu.add(copyName);
+        popupMenu.add(copyPackage);
+        popupMenu.add(separator);
+
+        JMenuItem clear = new JMenuItem("Clear", Icons.iconQuad("clear.png", 16));
+        clear.addActionListener(e -> grabTree.clear());
+
+        popupMenu.add(clear);
+
         popupMenu.pack();
+
+        popupMenu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                boolean stateCopy = grabTree.isSelectedClass();
+                copyPackage.setVisible(stateCopy);
+                copyFullName.setVisible(stateCopy);
+                copyName.setVisible(stateCopy);
+                separator.setVisible(stateCopy);
+                boolean stateExpand = !stateCopy;
+                expand.setVisible(stateExpand);
+                collapse.setVisible(stateExpand);
+                separatorEx.setVisible(stateExpand);
+            }
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
 
         grabTree.setComponentPopupMenu(popupMenu);
 
@@ -240,11 +304,13 @@ public class CodeGrabPanel extends JPanel {
         JButton buttonRefresh = new JButton(Icons.resizeIcon(Icons.icon("refresh.png"), 14, 14));
         buttonRefresh.setPreferredSize(new Dimension(20, 18));
         buttonRefresh.setFocusable(false);
+        buttonRefresh.addActionListener(this.refreshListenBuss::listen);
         buttonRefresh.setToolTipText("Refresh VM loaded classes");
 
         JButton buttonDisconnect = new JButton(Icons.resizeIcon(Icons.icon("disconnect.png"), 14, 14));
         buttonDisconnect.setPreferredSize(new Dimension(20, 18));
         buttonDisconnect.setFocusable(false);
+        buttonDisconnect.addActionListener(this.disconnectListenBuss::listen);
         buttonDisconnect.setToolTipText("Disconnect from VM");
 
         JButton buttonExpand = new JButton(Icons.resizeIcon(Icons.icon("expand.png"), 14, 14));
@@ -331,19 +397,97 @@ public class CodeGrabPanel extends JPanel {
         panelInput.add(inputTree, BorderLayout.CENTER);
 
         this.inputCard = new JCardContainer(panelMulti, card);
-        this.disconnectButton = buttonDisconnect;
-        this.refreshButton = buttonRefresh;
         this.bar = bar;
+
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem addToGrab = new JMenuItem("Add to grab", Icons.iconQuad("pointer_right.png", 14));
+        addToGrab.addActionListener(e -> this.grabTree.addClassNames(this.inputTree.selectedClasses()));
+        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand.png", 16));
+        expand.addActionListener(e -> inputTree.expandSelected());
+        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse.png", 16));
+        collapse.addActionListener(e -> inputTree.collapseSelected());
+        popupMenu.add(addToGrab);
+        JPopupMenu.Separator separatorEx = new JPopupMenu.Separator();
+        popupMenu.add(separatorEx);
+        popupMenu.add(expand);
+        popupMenu.add(collapse);
+        popupMenu.addSeparator();
+
+        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy.png", 16));
+        copyPackage.addActionListener(e -> {
+            List<String> list = inputTree.selectedClasses();
+            if (list.size() == 1) {
+                String selected = list.get(0);
+                String toCopy = selected.substring(0, selected.lastIndexOf("."));
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
+            }
+        });
+        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy.png", 16));
+        copyName.addActionListener(e -> {
+            List<String> list = inputTree.selectedClasses();
+            if (list.size() == 1) {
+                String selected = list.get(0);
+                String toCopy = selected.substring(selected.lastIndexOf(".") + 1);
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
+            }
+        });
+        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy.png", 16));
+        copyFullName.addActionListener(e -> {
+            List<String> list = inputTree.selectedClasses();
+            if (list.size() == 1) {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(list.get(0)), null);
+            }
+        });
+        JPopupMenu.Separator separator = new JPopupMenu.Separator();
+        popupMenu.add(copyFullName);
+        popupMenu.add(copyName);
+        popupMenu.add(copyPackage);
+        popupMenu.add(separator);
+
+        JMenuItem reload = new JMenuItem("Refresh all", Icons.iconQuad("refresh.png", 16));
+        reload.addActionListener(this.refreshListenBuss::listen);
+        JMenuItem disconnect = new JMenuItem("Disconnect from VM", Icons.iconQuad("disconnect.png", 16));
+        disconnect.addActionListener(this.disconnectListenBuss::listen);
+
+        popupMenu.add(disconnect);
+        popupMenu.add(reload);
+
+        popupMenu.pack();
+
+        popupMenu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                boolean stateCopy = inputTree.isSelectedClass();
+                copyPackage.setVisible(stateCopy);
+                copyFullName.setVisible(stateCopy);
+                copyName.setVisible(stateCopy);
+                separator.setVisible(stateCopy);
+                boolean stateExpand = !stateCopy;
+                expand.setVisible(stateExpand);
+                collapse.setVisible(stateExpand);
+                separatorEx.setVisible(stateExpand);
+            }
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+
+        inputTree.setComponentPopupMenu(popupMenu);
 
         return panelInput;
     }
 
-    public void addDisconnectListener(ActionListener listener) {
-        this.disconnectButton.addActionListener(listener);
+    public void addDisconnectListener(IListener<ActionEvent> listener) {
+        this.disconnectListenBuss.registerListener(listener);
     }
 
-    public void addRefreshListener(ActionListener listener) {
-        this.refreshButton.addActionListener(listener);
+    public void addRefreshListener(IListener<ActionEvent> listener) {
+        this.refreshListenBuss.registerListener(listener);
+    }
+
+    public void addAbortListener(IListener<Void> listener) {
+        this.grabAbortListenBuss.registerListener(listener);
     }
 
     public void addGrabListener(IListener<IGrabStartData> listener) {
@@ -353,6 +497,12 @@ public class CodeGrabPanel extends JPanel {
     public void grabDone() {
         if (this.grabFrame != null) {
             this.grabFrame.onDone();
+        }
+    }
+
+    public void setGrabTimeLeft(long time) {
+        if (this.grabFrame != null) {
+            this.grabFrame.setLeftTime(time);
         }
     }
 
@@ -378,7 +528,7 @@ public class CodeGrabPanel extends JPanel {
             this.bar.setIndeterminate(true);
         } else {
             this.bar.setIndeterminate(false);
-            this.bar.setValue(progress.x100k());
+            this.bar.setValue(progress.x100kI());
         }
     }
 
@@ -409,7 +559,7 @@ public class CodeGrabPanel extends JPanel {
     }
 
     private void showGrabDialog(File file) {
-        JGrabFrame frame = new JGrabFrame(Application.application(), file);
+        JGrabFrame frame = new JGrabFrame(Application.application(), this.fixFileIfNeeded(file));
         frame.addFrameCloseListener(value -> this.grabFrame = null);
         frame.addAbortListener(this.grabAbortListenBuss::listen);
         frame.addGrabListener(this.grabListenBuss::listen);
@@ -425,5 +575,12 @@ public class CodeGrabPanel extends JPanel {
 
         frame.setVisible(true);
         this.grabFrame = frame;
+    }
+
+    private File fixFileIfNeeded(File file) {
+        if (file.getName().endsWith(".jar") || file.getName().endsWith("zip") || file.isDirectory()) {
+            return file;
+        }
+        return new File(file.getAbsolutePath() + ".jar");
     }
 }

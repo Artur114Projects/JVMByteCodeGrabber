@@ -37,6 +37,12 @@ public class CodeGrabModel {
         this.writer.execute();
     }
 
+    public void abortGrabClasses() {
+        if (this.writer != null && !this.writer.isDone()) {
+            this.writer.cancel(true);
+        }
+    }
+
     public void addCRequestProcessListener(IListener<Percent> listener) {
         this.classesRequestProcessBuss.registerListener(listener);
     }

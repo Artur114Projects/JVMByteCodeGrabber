@@ -2,8 +2,10 @@ package com.artur114.bytecodegrab.main;
 
 import com.artur114.bytecodegrab.util.Icons;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.ui.FlatTitlePane;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class Application extends JFrame {
     private static Application application = null;
@@ -14,9 +16,7 @@ public class Application extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         this.setTitle("Byte Code Grabber");
-        this.setIconImage(Icons.image("icon.png"));
-
-        FlatLightLaf.setup();
+        this.setIconImage(Icons.image("icon_black.png"));
 
         this.initView();
     }

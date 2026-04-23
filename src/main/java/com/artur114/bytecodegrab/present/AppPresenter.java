@@ -107,11 +107,15 @@ public class AppPresenter {
             codeGrabModel.grabClasses(this.codeGrabView.getClassesToGrab(), data);
         });
         this.codeGrabModel.addBCRequestProcessListener(ret -> {
+            codeGrabView.setGrabTimeLeft(ret.timeLeft());
             codeGrabView.setGrabProgress(ret.percent());
             codeGrabView.setGrabState(ret.state());
         });
         this.codeGrabModel.addBCRequestDoneListener(ret -> {
             codeGrabView.grabDone();
+        });
+        this.codeGrabView.addAbortListener(value -> {
+            codeGrabModel.abortGrabClasses();
         });
     }
 }

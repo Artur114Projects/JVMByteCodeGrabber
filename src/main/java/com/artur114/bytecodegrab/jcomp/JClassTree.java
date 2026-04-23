@@ -2,6 +2,8 @@ package com.artur114.bytecodegrab.jcomp;
 
 import com.artur114.bytecodegrab.util.AsyncClassTreeBuilder;
 import com.artur114.bytecodegrab.util.Icons;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 
@@ -17,6 +19,7 @@ import java.util.*;
 
 public class JClassTree extends JPanel {
     private static final Color COLOR = new Color(239, 239, 239);
+    private static final Logger log = LoggerFactory.getLogger(JClassTree.class);
     private final Set<String> loadedClasses = new HashSet<>();
     private final DefaultTreeModel treeModel;
     private AsyncClassTreeBuilder builder;
@@ -38,14 +41,13 @@ public class JClassTree extends JPanel {
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
-                    Rectangle r = allRowsRectangle(tree);
-                    int row = tree.getRowForLocation(e.getX(), e.getY());
-                    boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+                    int row = rowForY(tree, e.getY());
+                    boolean outOfBounds = row == -1;
 
                     if (!outOfBounds) {
                         tree.requestFocusInWindow();
-                        popup.show(tree, e.getX(), e.getY());
                         tree.setSelectionRow(row);
+                        popup.show(tree, e.getX(), e.getY());
                     }
                 }
             }
@@ -53,23 +55,21 @@ public class JClassTree extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
-                    Rectangle r = allRowsRectangle(tree);
-                    int row = tree.getRowForLocation(e.getX(), e.getY());
-                    boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+                    int row = rowForY(tree, e.getY());
+                    boolean outOfBounds = row == -1;
 
                     if (!outOfBounds) {
                         tree.requestFocusInWindow();
-                        popup.show(tree, e.getX(), e.getY());
                         tree.setSelectionRow(row);
+                        popup.show(tree, e.getX(), e.getY());
                     }
                 }
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                Rectangle r = allRowsRectangle(tree);
-                int row = tree.getRowForLocation(e.getX(), e.getY());
-                boolean outOfBounds = !r.contains(e.getPoint()) || row == -1;
+                int row = rowForY(tree, e.getY());
+                boolean outOfBounds = row == -1;
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (outOfBounds) {
                         tree.clearSelection();
@@ -80,8 +80,8 @@ public class JClassTree extends JPanel {
                 }
                 if (!outOfBounds && popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
                     tree.requestFocusInWindow();
-                    popup.show(tree, e.getX(), e.getY());
                     tree.setSelectionRow(row);
+                    popup.show(tree, e.getX(), e.getY());
                 }
             }
 
@@ -96,6 +96,21 @@ public class JClassTree extends JPanel {
                     }
                 }
                 return ret;
+            }
+
+            private int rowForY(JTree tree, int y) {
+                if (tree.getRowCount() <= 0) {
+                    return -1;
+                }
+                Rectangle ret = tree.getRowBounds(0);
+
+                int row = y / ret.height;
+
+                if (row > tree.getRowCount()) {
+                    return -1;
+                }
+
+                return row;
             }
         });
 
@@ -168,7 +183,7 @@ public class JClassTree extends JPanel {
     }
 
     public void clear() {
-        ((DefaultMutableTreeNode) this.treeModel.getRoot()).removeAllChildren();
+        this.treeModel.setRoot(null);
         this.loadedClasses.clear();
         this.treeModel.reload();
     }
@@ -225,6 +240,16 @@ public class JClassTree extends JPanel {
         }
     }
 
+    public void collapseSelected() {
+        TreePath[] paths = this.tree.getSelectionPaths();
+        if (paths == null) {
+            return;
+        }
+        for (TreePath path : paths) {
+            this.collapseChild(path, (DefaultMutableTreeNode) path.getLastPathComponent());
+        }
+    }
+
     public void expandAll() {
         for (int i = 0; i != this.tree.getRowCount(); i++) {
             this.tree.expandRow(i);
@@ -240,13 +265,27 @@ public class JClassTree extends JPanel {
         }
     }
 
-    public void expandChild(TreePath path, DefaultMutableTreeNode parent) {
+    public boolean isSelectedClass() {
+        TreePath[] paths = this.tree.getSelectionPaths();
+        return paths != null && paths.length >= 1 && ((DefaultMutableTreeNode) paths[0].getLastPathComponent()).getUserObject() instanceof ClassInfo;
+    }
+
+    private void expandChild(TreePath path, DefaultMutableTreeNode parent) {
         this.tree.expandPath(path);
 
         for (DefaultMutableTreeNode node : this.child(parent)) {
             TreePath newPath = path.pathByAddingChild(node);
             this.expandChild(newPath, node);
         }
+    }
+
+    private void collapseChild(TreePath path, DefaultMutableTreeNode parent) {
+        for (DefaultMutableTreeNode node : this.child(parent)) {
+            TreePath newPath = path.pathByAddingChild(node);
+            this.collapseChild(newPath, node);
+        }
+
+        this.tree.collapsePath(path);
     }
 
     @Override

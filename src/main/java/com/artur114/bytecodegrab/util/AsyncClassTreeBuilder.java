@@ -4,7 +4,6 @@ import com.artur114.bytecodegrab.jcomp.JClassTree;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTreeNode, Percent> {
     private final List<String> classNames;
@@ -16,6 +15,7 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
     @Override
     protected DefaultMutableTreeNode doInBackground() throws Exception {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(new JClassTree.PackageInfo("root"));
+        this.sortClassNamespace(this.classNames);
         Percent percent = new Percent();
 
         for (int i = 0; i != this.classNames.size(); i++) {
@@ -69,6 +69,19 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         return root;
     }
 
+    private void sortClassNamespace(List<String> list) {
+        list.sort(Comparator.comparingInt(this::classWeight));
+    }
+
+    private int classWeight(String str) {
+        int ret = 0;
+        for (int i = 0; i != str.length(); i++) {
+            if (str.charAt(i) == '.') {
+                ret++;
+            }
+        }
+        return -ret;
+    }
 
     private int classesCount(DefaultMutableTreeNode node) {
         Object user = node.getUserObject();

@@ -45,7 +45,7 @@ public class ConnectModel {
                     vm.loadAgent(agent.getAbsolutePath(), server.address());
                 } finally {
                     vm.detach();
-                    agent.deleteOnExit();
+                    agent.delete();
                 }
 
             } catch (Exception e) {
