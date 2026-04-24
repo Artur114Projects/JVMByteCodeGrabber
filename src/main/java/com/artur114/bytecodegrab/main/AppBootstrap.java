@@ -58,7 +58,8 @@ public class AppBootstrap extends JFrame {
         panelJdk.setLayout(new BoxLayout(panelJdk, BoxLayout.X_AXIS));
         panelJdk.add(Box.createHorizontalStrut(15));
         JTextField field = new JTextField();
-        field.setMaximumSize(new Dimension(1000000, 22));
+        field.setMaximumSize(new Dimension(1000000, 23));
+        field.setFont(field.getFont().deriveFont(11.0F));
         field.setText(this.config.jdkPath);
         panelJdk.add(field);
         JButton button = new JButton(Icons.iconQuad("folder.png", 16));
