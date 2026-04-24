@@ -50,3 +50,6 @@
 - Сохраняет каждый класс так что его именем будет classname при условии что файлов с таким именем нет иначе package + classname, например: класс `java.util.List` будет в файловой системе `List.class`
 
 ## Credits
+Special thanks to JFormDesigner for his wonderful Look & Feel (FlatLaf)  
+Developer: [@Artur114](https://github.com/Artur114Projects)  
+Libraries: FlatLaf, Gson, Log4j
