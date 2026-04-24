@@ -1,22 +1,23 @@
-# About program
-Небольшая утилита позволяющая grab/dump/take/get/~steal~ байт код из работующей виртуальной машины Java и сохранять его на диск.
-Имеет графический интерфейс, несколько форматов сохранения, совместима с jdk 1.8+, и небольшой пред-загрузцик позволяющий выбирать java для запуска
+# About Program
+A small utility that allows you to grab/dump/take/get/~steal~ bytecode from a running Java Virtual Machine and save it to disk.  
+It has a graphical interface, several output formats, compatible with JDK 1.8+, and includes a small preloader (bootstrap) to choose the Java runtime for launch.
+
 ## Usage
 
 > [!NOTE]
-> Из-за специфики приложения, для запуска нужна JDK (не JRE)
+> Due to the nature of the application, a **JDK** (not a JRE) is required to run it.
 
-Если вы запустите приграмму на JRE то откроется окно пред-загрузщика  
-и вам будет предложено выбрать JDK для запуска  
+If you launch the program on a JRE, bootstrap window will open and prompt you to select a JDK.  
 > ![Bootstrap](https://github.com/Artur114Projects/JVMByteCodeGrabber/blob/master/images/bcg-bootstrap.png)
 
-Введите туда путь до jdk, например: `C:\Program Files\Java\jdk1.8.0_231`  
-Кнопка launch перезапустит приложение на указанной jdk  
-Если запуск не удастся вы увидете окно пред-загрузщика сново
+Enter the path to the JDK, for example: `C:\Program Files\Java\jdk1.8.0_231`  
+**Launch** button will restart application using the specified JDK.  
+If the launch fails, you will see the bootstrap window again.
 
 ### Main frame
 
-После запуска вы увидите список запущеных виртуальных машин. Выберете нужную JVM, подключитесь, добавте нужниые вам классы во вторую панель с помощью кнопки add to grab (самая правая кнопка левой панели)
+After successful launch, you will see a list of running Java virtual machines.  
+Select the target JVM, connect to it, then add  classes you need to right-side panel using **Add to grab** button (rightmost button on left panel).
 
 ![Screen 1](https://github.com/Artur114Projects/JVMByteCodeGrabber/blob/master/images/bcg-screen-1.png)  
 ![Screen 2](https://github.com/Artur114Projects/JVMByteCodeGrabber/blob/master/images/bcg-screen-2.png)  
@@ -24,32 +25,31 @@
 
 ### Class grabbing
 
-Чтобы сохранить выбранные классы нажмине кнопку grab (нижняя правая кнопка)
-Если путя из текстового поля с права не существует откроется File chooser, выбирете файл формата `.zip`, `.jar`, или папку
+To save the selected classes, press the **Grab** button (bottom right button).  
+If the path written in text field on the right does not exist, a file selection window opens, select a `.zip`, `.jar` file, or folder.
 
 > [!NOTE]
-> При выборе файла не поддерживаемого формата его формат будет автомотически заменен на `.jar`
+> If a file with an unsupported extension is selected, extension will be automatically changed to `.jar`.
 
-После вам будет предложенно выбрать формат записи
-
+After that, you will be asked to choose the output format.  
 > ![Screen 4](https://github.com/Artur114Projects/JVMByteCodeGrabber/blob/master/images/bcg-screen-4.png)
 
-Есть 3 формата записи
+There are three output formats:
 
-- Full package
-- Package + Class name
-- Just class name
+- **Full package**  
+- **Package + Class name**  
+- **Just class name**  
 
 **Full package:**  
-- Сохраняет каждый класс так что его package является путем в файловой системе, например: класс `java.util.List` будет в файловой системе `java\util\List.class`
+- Saves each class so that its package is used as the directory path. For example, class `java.util.List` becomes `java\util\List.class`.
 
-**Package + Class name**
-- Сохраняет каждый класс так что его именем будет package + classname, например: класс `java.util.List` будет в файловой системе `java.util.List.class`
+**Package + Class name**  
+- Saves each class using full package + classname as the file name. For example, class `java.util.List` becomes `java.util.List.class`.
 
-**Just class name**
-- Сохраняет каждый класс так что его именем будет classname при условии что файлов с таким именем нет иначе package + classname, например: класс `java.util.List` будет в файловой системе `List.class`
+**Just class name**  
+- Saves each class using only its name, provided no file with that name already exists, otherwise uses: package + class name. For example, class `java.util.List` becomes `List.class`.
 
 ## Credits
-Special thanks to JFormDesigner for his wonderful Look & Feel (FlatLaf)  
-Developer: [@Artur114](https://github.com/Artur114Projects)  
-Libraries: FlatLaf, Gson, Log4j
+Special thanks to [@JFormDesigner](https://github.com/JFormDesigner) for the wonderful Look & Feel ([FlatLaf](https://github.com/JFormDesigner/FlatLaf)).  
+**Libraries:** FlatLaf, Gson, Log4j  
+**Developer:** [@Artur114](https://github.com/Artur114Projects)  
