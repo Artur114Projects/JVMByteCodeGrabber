@@ -216,7 +216,7 @@ public class JvmListPanel extends JPanel {
             if (machine.contains("com.intellij.idea")) {
                 return Icons.iconQuad("idea.png", 16);
             }
-            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bytecodegrabber")) {
+            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
                 return Icons.iconQuad("icon_black_vm.png", 16);
             }
             if (machine.contains("prismlauncher") || machine.contains("minecraft") || machine.contains("minecraftforge")) {
@@ -232,7 +232,7 @@ public class JvmListPanel extends JPanel {
             if (machine.contains("com.intellij.idea")) {
                 return Icons.iconQuad("idea_d.png", 14);
             }
-            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bytecodegrabber")) {
+            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
                 return Icons.iconQuad("icon_black_vm_d.png", 16);
             }
             if (machine.contains("prismlauncher") || machine.contains("minecraft") || machine.contains("minecraftforge")) {
@@ -248,7 +248,7 @@ public class JvmListPanel extends JPanel {
             if (machine.contains("com.intellij.idea")) {
                 return "IntelliJ IDEA";
             }
-            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bytecodegrabber")) {
+            if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
                 return "Byte Code Grabber";
             }
             if (machine.contains("prismlauncher") || machine.contains("minecraft") || machine.contains("minecraftforge")) {

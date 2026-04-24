@@ -1,6 +1,4 @@
-plugins {
-    id 'java'
-}
+apply plugin: 'java'
 
 archivesBaseName = project_archive_name
 version = project_version

@@ -100,7 +100,9 @@ public class AppBootstrap extends JFrame {
         JButton launch = new JButton("Launch");
         launch.addActionListener(e -> {
             File file = new File(field.getText());
-            Path javaExe = file.toPath().resolve("bin/java.exe");
+            String os = System.getProperty("os.name").toLowerCase();
+            String javaExecutable = os.contains("win") ? "java.exe" : "java";
+            Path javaExe = file.toPath().resolve("bin").resolve(javaExecutable);
             if (file.exists() && file.isDirectory() && Files.exists(javaExe)) {
                 try {
                     String classpath = thisJarPath.toString();
