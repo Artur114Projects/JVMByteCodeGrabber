@@ -50,6 +50,10 @@ There are three output formats:
 - Saves each class using only its name, provided no file with that name already exists, otherwise uses: package + class name. For example, class `java.util.List` becomes `List.class`.
 
 ## Credits
+FlatLaf is licensed under the Apache License 2.0. Copyright (c) 2019-2024 FormDev Software GmbH.  
+Log4j is licensed under the Apache License 2.0, Copyright (c) The Apache Software Foundation.  
+Gson is licensed under the Apache License 2.0, Copyright (c) 2008 Google Inc.  
+
 Special thanks to [@JFormDesigner](https://github.com/JFormDesigner) for the wonderful Look & Feel ([FlatLaf](https://github.com/JFormDesigner/FlatLaf)).  
 **Libraries:** FlatLaf, Gson, Log4j  
-**Developer:** [@Artur114](https://github.com/Artur114Projects)  
+**Developer:** [@Artur114](https://github.com/Artur114Projects)
