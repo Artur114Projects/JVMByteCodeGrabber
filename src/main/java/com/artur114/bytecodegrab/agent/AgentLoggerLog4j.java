@@ -5,64 +5,162 @@ import org.apache.logging.log4j.Logger;
 
 public class AgentLoggerLog4j implements IAgentLogger {
     private final Logger logger = LogManager.getLogger("BYTECODEGARB-AGENT");
+    private final AgentLoggerSout sout = new AgentLoggerSout();
+    private boolean down = false;
 
     @Override
     public void warn(String log) {
-        this.logger.warn(log);
+        if (this.down) {
+            this.sout.warn(log);
+            return;
+        }
+        try {
+            this.logger.warn(log);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void info(String log) {
-        this.logger.info(log);
+        if (this.down) {
+            this.sout.info(log);
+            return;
+        }
+        try {
+            this.logger.info(log);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void error(String log) {
-        this.logger.error(log);
+        if (this.down) {
+            this.sout.error(log);
+            return;
+        }
+        try {
+            this.logger.error(log);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void warn(String log, Object arg) {
-        this.logger.warn(log, arg);
+        if (this.down) {
+            this.sout.warn(log, arg);
+            return;
+        }
+        try {
+            this.logger.warn(log, arg);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void info(String log, Object arg) {
-        this.logger.info(log, arg);
+        if (this.down) {
+            this.sout.info(log, arg);
+            return;
+        }
+        try {
+            this.logger.info(log, arg);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void error(String log, Object arg) {
-        this.logger.error(log, arg);
+        if (this.down) {
+            this.sout.error(log, arg);
+            return;
+        }
+        try {
+            this.logger.error(log, arg);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void warn(String log, Object... args) {
-        this.logger.warn(log, args);
+        if (this.down) {
+            this.sout.warn(log, args);
+            return;
+        }
+        try {
+            this.logger.warn(log, args);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void info(String log, Object... args) {
-        this.logger.info(log, args);
+        if (this.down) {
+            this.sout.info(log, args);
+            return;
+        }
+        try {
+            this.logger.info(log, args);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void error(String log, Object... args) {
-        this.logger.error(log, args);
+        if (this.down) {
+            this.sout.error(log, args);
+            return;
+        }
+        try {
+            this.logger.error(log, args);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void warn(String log, Object arg, Object arg1) {
-        this.logger.warn(log, arg, arg1);
+        if (this.down) {
+            this.sout.warn(log, arg, arg1);
+            return;
+        }
+        try {
+            this.logger.warn(log, arg, arg1);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void info(String log, Object arg, Object arg1) {
-        this.logger.info(log, arg, arg1);
+        if (this.down) {
+            this.sout.info(log, arg, arg1);
+            return;
+        }
+        try {
+            this.logger.info(log, arg, arg1);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 
     @Override
     public void error(String log, Object arg, Object arg1) {
-        this.logger.error(log, arg, arg1);
+        if (this.down) {
+            this.sout.error(log, arg, arg1);
+            return;
+        }
+        try {
+            this.logger.error(log, arg, arg1);
+        } catch (Exception e) {
+            down = true;
+        }
     }
 }
