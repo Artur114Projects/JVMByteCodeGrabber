@@ -2,6 +2,8 @@ package com.artur114.bytecodegrab.main;
 
 import com.artur114.bytecodegrab.jcomp.JLoadingFrame;
 import com.artur114.bytecodegrab.present.AppPresenter;
+import com.artur114.bytecodegrab.util.Icons;
+import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.sun.tools.attach.VirtualMachine;
@@ -42,9 +44,10 @@ public class Bootstrap {
     }
 
     private void launch() {
+        this.preLaunch();
         JLoadingFrame loading = new JLoadingFrame();
         loading.setVisible(true);
-        FlatLightLaf.setup();
+        FlatIntelliJLaf.setup();
 
         SwingUtilities.invokeLater(() -> {
             Application.init();
@@ -58,6 +61,7 @@ public class Bootstrap {
     }
 
     private void launchBootstrapper(Path thisJarPath) {
+        this.preLaunch();
         JLoadingFrame loading = new JLoadingFrame();
         loading.setVisible(true);
         FlatIntelliJLaf.setup();
@@ -68,6 +72,10 @@ public class Bootstrap {
             loading.dispose();
             AppBootstrap.application().view();
         });
+    }
+
+    private void preLaunch() {
+        Icons.newIcons(() -> "light");
     }
 
     private Path thisJarPath() throws URISyntaxException {

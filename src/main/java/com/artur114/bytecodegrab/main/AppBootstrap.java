@@ -31,7 +31,7 @@ public class AppBootstrap extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         this.setTitle("BCG Bootstrap");
-        this.setIconImage(Icons.image("icon_black.png"));
+        this.setIconImage(Icons.image("icon_black"));
         this.setResizable(false);
 
         this.initView();
@@ -62,7 +62,8 @@ public class AppBootstrap extends JFrame {
         field.setFont(field.getFont().deriveFont(11.0F));
         field.setText(this.config.jdkPath);
         panelJdk.add(field);
-        JButton button = new JButton(Icons.iconQuad("folder.png", 16));
+        JButton button = new JButton(Icons.iconQuad("folder", 16));
+        button.setToolTipText("Browse");
         button.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser(new File("."));
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);

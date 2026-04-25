@@ -12,8 +12,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.util.List;
 import java.util.*;
 
@@ -361,11 +359,10 @@ public class JClassTree extends JPanel {
     }
 
     private static class ClassTreeCellRenderer extends DefaultTreeCellRenderer {
-        private final Icon packageIcon = Icons.resizeIcon(Icons.icon("folder.png"), 20, 20);
-        private final Icon classIcon = Icons.resizeIcon(Icons.icon("java_class.png"), 20, 20);
-        private final Icon classIconU = Icons.resizeIcon(Icons.icon("java_class_u.png"), 20, 20);
-        private final Icon packageIconD = Icons.resizeIcon(Icons.icon("folder_d.png"), 20, 20);
-        private final Icon classIconD = Icons.resizeIcon(Icons.icon("java_class_d.png"), 20, 20);
+        private final Icon packageIcon = Icons.iconQuad("folder", 20);
+        private final Icon classIcon = Icons.iconQuad("java_class", 20);
+        private final Icon packageIconD = Icons.iconQuadD("folder", 20);
+        private final Icon classIconD = Icons.iconQuadD("java_class", 20);
 
 
         @Override
@@ -375,11 +372,7 @@ public class JClassTree extends JPanel {
             Object userObj = node.getUserObject();
             if (userObj instanceof ClassInfo) {
                 this.setDisabledIcon(classIconD);
-                if (((ClassInfo) userObj).fullName.startsWith("!")) {
-                    this.setIcon(classIconU);
-                } else {
-                    this.setIcon(classIcon);
-                }
+                this.setIcon(classIcon);
             } else {
                 this.setDisabledIcon(packageIconD);
                 this.setIcon(packageIcon);

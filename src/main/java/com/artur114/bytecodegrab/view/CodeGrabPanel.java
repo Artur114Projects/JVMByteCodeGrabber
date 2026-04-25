@@ -1,9 +1,8 @@
 package com.artur114.bytecodegrab.view;
 
-import com.artur114.bytecodegrab.jcomp.JCardContainer;
-import com.artur114.bytecodegrab.jcomp.JClassTree;
-import com.artur114.bytecodegrab.jcomp.JGrabFrame;
+import com.artur114.bytecodegrab.jcomp.*;
 import com.artur114.bytecodegrab.main.Application;
+import com.artur114.bytecodegrab.ui.FlatButtonBorderExt;
 import com.artur114.bytecodegrab.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,76 +59,48 @@ public class CodeGrabPanel extends JPanel {
 
         JPanel topGrab = new JPanel();
         topGrab.setLayout(new BoxLayout(topGrab, BoxLayout.X_AXIS));
-        JButton buttonClear = new JButton(Icons.resizeIcon(Icons.icon("clear.png"), 14, 14));
-        buttonClear.addActionListener(e -> grabTree.clear());
-        buttonClear.setPreferredSize(new Dimension(20, 18));
-        buttonClear.setFocusable(false);
-        buttonClear.setToolTipText("Clear classes");
 
-        JButton buttonRemove = new JButton(Icons.resizeIcon(Icons.icon("remove.png"), 14, 14));
-        buttonRemove.setPreferredSize(new Dimension(20, 18));
-        buttonRemove.setFocusable(false);
-        buttonRemove.addActionListener(e -> grabTree.removeClassNames(grabTree.selectedClasses()));
-        buttonRemove.setToolTipText("Remove selected");
-
-        JButton buttonExpand = new JButton(Icons.resizeIcon(Icons.icon("expand.png"), 14, 14));
-        buttonExpand.setPreferredSize(new Dimension(20, 18));
-        buttonExpand.setFocusable(false);
-        buttonExpand.addActionListener(e -> grabTree.expandSelected());
-        buttonExpand.setToolTipText("Expand selected");
-
-        JButton buttonCollapse = new JButton(Icons.resizeIcon(Icons.icon("collapse.png"), 14, 14));
-        buttonCollapse.setPreferredSize(new Dimension(20, 18));
-        buttonCollapse.setFocusable(false);
-        buttonCollapse.addActionListener(e -> grabTree.collapseAll());
-        buttonCollapse.setToolTipText("Collapse all");
-
-        JPanel buttons = new JPanel();
-        buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
-        buttons.add(buttonClear);
-        buttons.add(buttonRemove);
-        buttons.add(buttonExpand);
-        buttons.add(buttonCollapse);
-        buttons.setBorder(BorderFactory.createEmptyBorder(1, 1, 0, 0));
-        topGrab.add(buttons, BorderLayout.WEST);
-
-        JTextField search = new JTextField();
-        search.setFont(search.getFont().deriveFont(11f));
-        search.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                performSearch();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                performSearch();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {}
-
-            private void performSearch() {
-                String query = search.getText().trim();
-                grabTree.searchBy(query);
-            }
+        JButtonsPane buttons = new JButtonsPane(EnumAxis.X_AXIS);
+        buttons.createButton(Icons.iconQuad("clear", 14), button -> {
+            button.addActionListener(e -> grabTree.clear());
+            button.setToolTipText("Clear classes");
         });
-        search.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1), BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
-
-        JPanel panel1 = new JPanel();
-        panel1.setLayout(new BoxLayout(panel1, BoxLayout.X_AXIS));
-
-        panel1.add(Box.createHorizontalStrut(4));
-        JLabel label = new JLabel("Search: ");
-        label.setFont(label.getFont().deriveFont(11f));
-        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-        panel1.add(label);
-        panel1.add(search);
-        panel1.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
-
-        topGrab.add(panel1, BorderLayout.CENTER);
-
-
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("remove", 14), button -> {
+            button.addActionListener(e -> grabTree.removeClassNames(grabTree.selectedClasses()));
+            button.setToolTipText("Remove selected");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("expand", 14), button -> {
+            button.addActionListener(e -> grabTree.expandSelected());
+            button.setToolTipText("Expand selected");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("collapse", 14), button -> {
+            button.addActionListener(e -> grabTree.collapseAll());
+            button.setToolTipText("Collapse all");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("grab", 14), button -> {
+            button.addActionListener(e -> {
+                if (!this.getClassesToGrab().isEmpty()) {
+                    this.showGrabDialog();
+                } else {
+                    JOptionPane.showMessageDialog(Application.application(), "Please add classes to grab pane", "Grabber", JOptionPane.WARNING_MESSAGE);
+                }
+            });
+            button.setToolTipText("Grab classes");
+        });
+        buttons.configure(button -> {
+            button.setBorder(new FlatButtonBorderExt().setFocusWidth(0));
+            button.setPreferredSize(new Dimension(20, 18));
+            button.setFocusable(false);
+        });
+        buttons.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 0));
+        topGrab.add(buttons, BorderLayout.WEST);
+        JCTreeSearchPanel searchPanel = new JCTreeSearchPanel(grabTree);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(searchPanel.getBorder(), BorderFactory.createEmptyBorder(0, 0, 1, 0)));
+        topGrab.add(searchPanel, BorderLayout.CENTER);
         panel.add(topGrab, BorderLayout.NORTH);
 
         JPanel bottom = new JPanel(new BorderLayout());
@@ -141,93 +112,32 @@ public class CodeGrabPanel extends JPanel {
         JPanel panelGrab = new JPanel(new BorderLayout());
         JButton grab = new JButton("grab");
         grab.addActionListener(e -> {
-            if (this.getClassesToGrab().isEmpty()) {
-                JOptionPane.showMessageDialog(Application.application(), "Please add classes to grab pane", "Grabber", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-
 
             File file = new File(field.getText());
 
             if (file.getParentFile() == null || !file.getParentFile().exists()) {
-                JFileChooser chooser = new JFileChooser();
-                chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                chooser.setMultiSelectionEnabled(false);
-                chooser.removeChoosableFileFilter(chooser.getChoosableFileFilters()[0]);
-                chooser.addChoosableFileFilter(new FileFilter() {
-                    @Override
-                    public boolean accept(File f) {
-                        return f.isDirectory() || f.getName().endsWith(".jar") || f.getName().endsWith(".zip");
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return "All formats (*.jar, *.zip, dir)";
-                    }
-                });
-                chooser.addChoosableFileFilter(new FileFilter() {
-                    @Override
-                    public boolean accept(File f) {
-                        return f.isDirectory() || f.getName().endsWith(".jar");
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return "jar files (*.jar)";
-                    }
-                });
-                chooser.addChoosableFileFilter(new FileFilter() {
-                    @Override
-                    public boolean accept(File f) {
-                        return f.isDirectory() || f.getName().endsWith(".zip");
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return "zip files (*.zip)";
-                    }
-                });
-                chooser.addChoosableFileFilter(new FileFilter() {
-                    @Override
-                    public boolean accept(File f) {
-                        return f.isDirectory();
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return "dirs";
-                    }
-                });
-
-                int i = chooser.showDialog(Application.application(), "Set output");
-
-                if (i == 0) {
-                    field.setText(chooser.getSelectedFile().toString());
-                    this.showGrabDialog(chooser.getSelectedFile());
-                }
             } else {
-                this.showGrabDialog(file);
+
             }
         });
         grab.setPreferredSize(new Dimension(60, 19));
         panelGrab.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 1));
         panelGrab.add(grab, BorderLayout.CENTER);
-
         bottom.add(panelGrab, BorderLayout.EAST);
+
         bottom.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-        panel.add(bottom, BorderLayout.SOUTH);
+//        panel.add(bottom, BorderLayout.SOUTH);
 
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem remove = new JMenuItem("Remove", Icons.iconQuad("remove.png", 14));
+        JMenuItem remove = new JMenuItem("Remove", Icons.iconQuad("remove", 14));
         popupMenu.add(remove);
 
 
         remove.addActionListener(e -> this.grabTree.removeClassNames(this.grabTree.selectedClasses()));
-        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand.png", 16));
+        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand", 16));
         expand.addActionListener(e -> grabTree.expandSelected());
-        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse.png", 16));
+        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse", 16));
         collapse.addActionListener(e -> grabTree.collapseSelected());
         JPopupMenu.Separator separatorEx = new JPopupMenu.Separator();
         popupMenu.add(separatorEx);
@@ -235,7 +145,7 @@ public class CodeGrabPanel extends JPanel {
         popupMenu.add(collapse);
         popupMenu.addSeparator();
 
-        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy", 16));
         copyPackage.addActionListener(e -> {
             List<String> list = grabTree.selectedClasses();
             if (list.size() == 1) {
@@ -244,7 +154,7 @@ public class CodeGrabPanel extends JPanel {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
             }
         });
-        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy", 16));
         copyName.addActionListener(e -> {
             List<String> list = grabTree.selectedClasses();
             if (list.size() == 1) {
@@ -253,7 +163,7 @@ public class CodeGrabPanel extends JPanel {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
             }
         });
-        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy", 16));
         copyFullName.addActionListener(e -> {
             List<String> list = grabTree.selectedClasses();
             if (list.size() == 1) {
@@ -266,7 +176,7 @@ public class CodeGrabPanel extends JPanel {
         popupMenu.add(copyPackage);
         popupMenu.add(separator);
 
-        JMenuItem clear = new JMenuItem("Clear", Icons.iconQuad("clear.png", 16));
+        JMenuItem clear = new JMenuItem("Clear", Icons.iconQuad("clear", 16));
         clear.addActionListener(e -> grabTree.clear());
 
         popupMenu.add(clear);
@@ -301,91 +211,50 @@ public class CodeGrabPanel extends JPanel {
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
 
-        JButton buttonRefresh = new JButton(Icons.resizeIcon(Icons.icon("refresh.png"), 14, 14));
-        buttonRefresh.setPreferredSize(new Dimension(20, 18));
-        buttonRefresh.setFocusable(false);
-        buttonRefresh.addActionListener(this.refreshListenBuss::listen);
-        buttonRefresh.setToolTipText("Refresh VM loaded classes");
-
-        JButton buttonDisconnect = new JButton(Icons.resizeIcon(Icons.icon("disconnect.png"), 14, 14));
-        buttonDisconnect.setPreferredSize(new Dimension(20, 18));
-        buttonDisconnect.setFocusable(false);
-        buttonDisconnect.addActionListener(this.disconnectListenBuss::listen);
-        buttonDisconnect.setToolTipText("Disconnect from VM");
-
-        JButton buttonExpand = new JButton(Icons.resizeIcon(Icons.icon("expand.png"), 14, 14));
-        buttonExpand.setPreferredSize(new Dimension(20, 18));
-        buttonExpand.setFocusable(false);
-        buttonExpand.addActionListener(e -> inputTree.expandSelected());
-        buttonExpand.setToolTipText("Expand selected");
-
-        JButton buttonCollapse = new JButton(Icons.resizeIcon(Icons.icon("collapse.png"), 14, 14));
-        buttonCollapse.setPreferredSize(new Dimension(20, 18));
-        buttonCollapse.setFocusable(false);
-        buttonCollapse.addActionListener(e -> inputTree.collapseAll());
-        buttonCollapse.setToolTipText("Collapse all");
-
-        JButton buttonAddToGrab = new JButton(Icons.resizeIcon(Icons.icon("pointer_right.png"), 14, 14));
-        buttonAddToGrab.setPreferredSize(new Dimension(20, 18));
-        buttonAddToGrab.setFocusable(false);
-        buttonAddToGrab.addActionListener(e -> this.grabTree.addClassNames(this.inputTree.selectedClasses()));
-        buttonAddToGrab.setToolTipText("Add to grab");
-
-        JPanel buttons = new JPanel();
-        buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
-        buttons.add(buttonRefresh);
-        buttons.add(buttonDisconnect);
-        buttons.add(buttonExpand);
-        buttons.add(buttonCollapse);
-        buttons.add(buttonAddToGrab);
-        buttons.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 0));
-        topPanel.add(buttons);
-
-
-        JTextField searchField = new JTextField();
-        searchField.setFont(searchField.getFont().deriveFont(11f));
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                performSearch();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                performSearch();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {}
-
-            private void performSearch() {
-                String query = searchField.getText().trim();
-                inputTree.searchBy(query);
-            }
+        JButtonsPane buttons = new JButtonsPane(EnumAxis.X_AXIS);
+        buttons.createButton(Icons.iconQuad("refresh", 14), button -> {
+            button.addActionListener(this.refreshListenBuss::listen);
+            button.setToolTipText("Refresh VM loaded classes");
         });
-        searchField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1), BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("disconnect", 14), button -> {
+            button.addActionListener(this.disconnectListenBuss::listen);
+            button.setToolTipText("Disconnect from VM");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("expand", 14), button -> {
+            button.addActionListener(e -> inputTree.expandSelected());
+            button.setToolTipText("Expand selected");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("collapse", 14), button -> {
+            button.addActionListener(e -> inputTree.collapseAll());
+            button.setToolTipText("Collapse all");
+        });
+        buttons.addSplitter(1);
+        buttons.createButton(Icons.iconQuad("pointer_right", 14), button -> {
+            button.addActionListener(e -> this.grabTree.addClassNames(this.inputTree.selectedClasses()));
+            button.setToolTipText("Add to grab");
+        });
+        buttons.configure(button -> {
+            button.setBorder(new FlatButtonBorderExt().setFocusWidth(0));
+            button.setPreferredSize(new Dimension(20, 18));
+            button.setFocusable(false);
+        });
+        buttons.setBorder(BorderFactory.createEmptyBorder(1, 1, 2, 0));
+        topPanel.add(buttons);
+        JCTreeSearchPanel panelSearch = new JCTreeSearchPanel(inputTree);
 
         CardLayout card = new CardLayout();
         JPanel panelMulti = new JPanel(card);
-
-        JPanel panelSearch = new JPanel();
-        panelSearch.setLayout(new BoxLayout(panelSearch, BoxLayout.X_AXIS));
-
-        panelSearch.add(Box.createHorizontalStrut(4));
-        JLabel label = new JLabel("Search: ");
-        label.setFont(label.getFont().deriveFont(11f));
-        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-        panelSearch.add(label);
-        panelSearch.add(searchField);
-        panelSearch.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
-
+        panelMulti.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
 
         JPanel panelBar = new JPanel();
         panelBar.setLayout(new BorderLayout());
         JProgressBar bar = new JProgressBar(0, 100000);
         bar.setPreferredSize(new Dimension(0, 0));
         panelBar.add(bar, BorderLayout.CENTER);
-        panelBar.setBorder(BorderFactory.createEmptyBorder(2, 2, 1, 1));
+        panelBar.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 1));
 
         panelMulti.add(panelSearch, "search");
         panelMulti.add(panelBar, "bar");
@@ -400,11 +269,11 @@ public class CodeGrabPanel extends JPanel {
         this.bar = bar;
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem addToGrab = new JMenuItem("Add to grab", Icons.iconQuad("pointer_right.png", 14));
+        JMenuItem addToGrab = new JMenuItem("Add to grab", Icons.iconQuad("pointer_right", 14));
         addToGrab.addActionListener(e -> this.grabTree.addClassNames(this.inputTree.selectedClasses()));
-        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand.png", 16));
+        JMenuItem expand = new JMenuItem("Expand", Icons.iconQuad("expand", 16));
         expand.addActionListener(e -> inputTree.expandSelected());
-        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse.png", 16));
+        JMenuItem collapse = new JMenuItem("Collapse", Icons.iconQuad("collapse", 16));
         collapse.addActionListener(e -> inputTree.collapseSelected());
         popupMenu.add(addToGrab);
         JPopupMenu.Separator separatorEx = new JPopupMenu.Separator();
@@ -413,7 +282,7 @@ public class CodeGrabPanel extends JPanel {
         popupMenu.add(collapse);
         popupMenu.addSeparator();
 
-        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyPackage = new JMenuItem("Copy package", Icons.iconQuad("copy", 16));
         copyPackage.addActionListener(e -> {
             List<String> list = inputTree.selectedClasses();
             if (list.size() == 1) {
@@ -422,7 +291,7 @@ public class CodeGrabPanel extends JPanel {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
             }
         });
-        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyName = new JMenuItem("Copy class name", Icons.iconQuad("copy", 16));
         copyName.addActionListener(e -> {
             List<String> list = inputTree.selectedClasses();
             if (list.size() == 1) {
@@ -431,7 +300,7 @@ public class CodeGrabPanel extends JPanel {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(toCopy), null);
             }
         });
-        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyFullName = new JMenuItem("Copy full class name", Icons.iconQuad("copy", 16));
         copyFullName.addActionListener(e -> {
             List<String> list = inputTree.selectedClasses();
             if (list.size() == 1) {
@@ -444,9 +313,9 @@ public class CodeGrabPanel extends JPanel {
         popupMenu.add(copyPackage);
         popupMenu.add(separator);
 
-        JMenuItem reload = new JMenuItem("Refresh all", Icons.iconQuad("refresh.png", 16));
+        JMenuItem reload = new JMenuItem("Refresh all", Icons.iconQuad("refresh", 16));
         reload.addActionListener(this.refreshListenBuss::listen);
-        JMenuItem disconnect = new JMenuItem("Disconnect from VM", Icons.iconQuad("disconnect.png", 16));
+        JMenuItem disconnect = new JMenuItem("Disconnect from VM", Icons.iconQuad("disconnect", 16));
         disconnect.addActionListener(this.disconnectListenBuss::listen);
 
         popupMenu.add(disconnect);
@@ -558,8 +427,8 @@ public class CodeGrabPanel extends JPanel {
         }
     }
 
-    private void showGrabDialog(File file) {
-        JGrabFrame frame = new JGrabFrame(Application.application(), this.fixFileIfNeeded(file));
+    private void showGrabDialog() {
+        JGrabFrame frame = new JGrabFrame(Application.application());
         frame.addFrameCloseListener(value -> this.grabFrame = null);
         frame.addAbortListener(this.grabAbortListenBuss::listen);
         frame.addGrabListener(this.grabListenBuss::listen);
@@ -573,14 +442,7 @@ public class CodeGrabPanel extends JPanel {
             }
         });
 
-        frame.setVisible(true);
+        frame.view();
         this.grabFrame = frame;
-    }
-
-    private File fixFileIfNeeded(File file) {
-        if (file.getName().endsWith(".jar") || file.getName().endsWith("zip") || file.isDirectory()) {
-            return file;
-        }
-        return new File(file.getAbsolutePath() + ".jar");
     }
 }

@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "light": {
+      "default": "light/icon.png",
+      "disabled": "light/disabled/icon.png"
+    }
+  }
+}

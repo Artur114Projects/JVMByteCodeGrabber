@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "light": {
+      "default": "light/java_class.png",
+      "disabled": "light/disabled/java_class.png"
+    }
+  }
+}

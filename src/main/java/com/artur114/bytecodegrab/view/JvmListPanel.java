@@ -1,5 +1,6 @@
 package com.artur114.bytecodegrab.view;
 
+import com.artur114.bytecodegrab.ui.FlatButtonBorderExt;
 import com.artur114.bytecodegrab.util.Icons;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import javax.swing.*;
@@ -67,8 +68,11 @@ public class JvmListPanel extends JPanel {
 
         JPanel top = new JPanel(new BorderLayout());
         JPanel panelB = new JPanel(new BorderLayout());
-        JButton button = new JButton(Icons.resizeIcon(Icons.icon("refresh.png"), 14, 14));
+        JButton button = new JButton(Icons.resizeIcon(Icons.icon("refresh"), 14, 14));
+        button.setBorder(new FlatButtonBorderExt().setFocusWidth(0));
+        button.setMinimumSize(new Dimension(20, 18));
         button.setPreferredSize(new Dimension(20, 18));
+        button.setMaximumSize(new Dimension(20, 18));
         button.setFocusable(false);
         button.setToolTipText("Refresh JVM's");
         button.addActionListener(new AbstractAction() {
@@ -113,14 +117,14 @@ public class JvmListPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(this.jvmList);
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem copyPid = new JMenuItem("Copy PID", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyPid = new JMenuItem("Copy PID", Icons.iconQuad("copy", 16));
         copyPid.addActionListener(e -> {
             VirtualMachineDescriptor selected = getSelectedJvm();
             if (selected != null) {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(selected.id()), null);
             }
         });
-        JMenuItem copyName = new JMenuItem("Copy VM Name", Icons.iconQuad("copy.png", 16));
+        JMenuItem copyName = new JMenuItem("Copy VM Name", Icons.iconQuad("copy", 16));
         copyName.addActionListener(e -> {
             VirtualMachineDescriptor selected = getSelectedJvm();
             if (selected != null) {
@@ -211,32 +215,32 @@ public class JvmListPanel extends JPanel {
 
         private Icon iconFor(String machine) {
             if (machine.contains("GradleDaemon") || machine.contains("org.gradle.launcher")) {
-                return Icons.iconQuad("gradle.png", 16);
+                return Icons.iconQuad("gradle", 16);
             }
             if (machine.contains("com.intellij.idea")) {
-                return Icons.iconQuad("idea.png", 16);
+                return Icons.iconQuad("idea", 16);
             }
             if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
-                return Icons.iconQuad("icon_black_vm.png", 16);
+                return Icons.iconQuad("icon_vm", 16);
             }
             if (machine.contains("prismlauncher") || machine.contains("minecraft") || machine.contains("minecraftforge")) {
-                return Icons.iconQuad("mc.png", 16);
+                return Icons.iconQuad("mc", 16);
             }
             return UIManager.getIcon("FileView.computerIcon");
         }
 
         private Icon iconDisabledFor(String machine) {
             if (machine.contains("GradleDaemon") || machine.contains("org.gradle.launcher")) {
-                return Icons.iconQuad("gradle_d.png", 14);
+                return Icons.iconQuadD("gradle", 14);
             }
             if (machine.contains("com.intellij.idea")) {
-                return Icons.iconQuad("idea_d.png", 14);
+                return Icons.iconQuadD("idea", 14);
             }
             if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
-                return Icons.iconQuad("icon_black_vm_d.png", 16);
+                return Icons.iconQuadD("icon_vm", 16);
             }
             if (machine.contains("prismlauncher") || machine.contains("minecraft") || machine.contains("minecraftforge")) {
-                return Icons.iconQuad("mc_d.png", 16);
+                return Icons.iconQuadD("mc", 16);
             }
             return UIManager.getIcon("FileView.computerIcon");
         }

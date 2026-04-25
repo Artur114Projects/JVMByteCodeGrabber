@@ -14,7 +14,7 @@ public class JLoadingFrame extends JFrame {
         this.setTitle("Byte Code Grabber");
         this.setUndecorated(true);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setIconImage(Icons.image("icon_loading.png"));
+        this.setIconImage(Icons.image("icon_loading"));
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));

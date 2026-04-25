@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "all": {
+      "default": "light/icon_vm.png",
+      "disabled": "light/disabled/icon_vm.png"
+    }
+  }
+}

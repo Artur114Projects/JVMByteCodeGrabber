@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "all": {
+      "default": "all/mc.png",
+      "disabled": "all/disabled/mc.png"
+    }
+  }
+}

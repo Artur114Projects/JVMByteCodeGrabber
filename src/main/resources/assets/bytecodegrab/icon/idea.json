@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "all": {
+      "default": "all/idea.png",
+      "disabled": "all/disabled/idea.png"
+    }
+  }
+}

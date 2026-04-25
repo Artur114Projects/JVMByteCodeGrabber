@@ -1,0 +1,8 @@
+{
+  "themes": {
+    "all": {
+      "default": "all/gradle.png",
+      "disabled": "all/disabled/gradle.png"
+    }
+  }
+}
