@@ -16,8 +16,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.warn(log);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -29,8 +29,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.info(log);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -42,8 +42,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.error(log);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -55,8 +55,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.warn(log, arg);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -68,8 +68,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.info(log, arg);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -81,8 +81,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.error(log, arg);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -94,8 +94,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.warn(log, args);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -107,7 +107,7 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.info(log, args);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             down = true;
         }
     }
@@ -120,8 +120,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.error(log, args);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -133,8 +133,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.warn(log, arg, arg1);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -146,8 +146,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.info(log, arg, arg1);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 
@@ -159,8 +159,8 @@ public class AgentLoggerLog4j implements IAgentLogger {
         }
         try {
             this.logger.error(log, arg, arg1);
-        } catch (Exception e) {
-            down = true;
+        } catch (Throwable e) {
+            this.down = true;
         }
     }
 }
