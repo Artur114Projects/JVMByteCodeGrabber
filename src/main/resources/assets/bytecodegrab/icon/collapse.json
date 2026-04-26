@@ -2,6 +2,9 @@
   "themes": {
     "light": {
       "all": "light/collapse.png"
+    },
+    "dark": {
+      "all": "dark/collapse.png"
     }
   }
 }

@@ -2,6 +2,7 @@ package com.artur114.bytecodegrab.jcomp;
 
 import com.artur114.bytecodegrab.util.AsyncClassTreeBuilder;
 import com.artur114.bytecodegrab.util.Icons;
+import com.artur114.bytecodegrab.util.Theme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,13 +17,14 @@ import java.util.List;
 import java.util.*;
 
 public class JClassTree extends JPanel {
-    private static final Color COLOR = new Color(239, 239, 239);
     private static final Logger log = LoggerFactory.getLogger(JClassTree.class);
     private final Set<String> loadedClasses = new HashSet<>();
     private final DefaultTreeModel treeModel;
     private AsyncClassTreeBuilder builder;
     private String currentFilter;
     public boolean keepExpanded = false;
+    private JPopupMenu popupDef;
+    private int lastMouseY = -1;
     private JPopupMenu popup;
     public final JTree tree;
 
@@ -38,35 +40,53 @@ public class JClassTree extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
-                    int row = rowForY(tree, e.getY());
+                if (e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    lastMouseY = e.getY();
+                    int row = rowForY(e.getY());
                     boolean outOfBounds = row == -1;
 
                     if (!outOfBounds) {
-                        tree.requestFocusInWindow();
-                        tree.setSelectionRow(row);
-                        popup.show(tree, e.getX(), e.getY());
+                        if (popup != null) {
+                            tree.requestFocusInWindow();
+                            if (!tree.isRowSelected(row)) {
+                                tree.setSelectionRow(row);
+                            }
+                            popup.show(tree, e.getX(), e.getY());
+                        }
+                    } else {
+                        if (popupDef != null) {
+                            popupDef.show(tree, e.getX(), e.getY());
+                        }
                     }
                 }
             }
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
-                    int row = rowForY(tree, e.getY());
+                if (e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    lastMouseY = e.getY();
+                    int row = rowForY(e.getY());
                     boolean outOfBounds = row == -1;
 
                     if (!outOfBounds) {
-                        tree.requestFocusInWindow();
-                        tree.setSelectionRow(row);
-                        popup.show(tree, e.getX(), e.getY());
+                        if (popup != null) {
+                            tree.requestFocusInWindow();
+                            if (!tree.isRowSelected(row)) {
+                                tree.setSelectionRow(row);
+                            }
+                            popup.show(tree, e.getX(), e.getY());
+                        }
+                    } else {
+                        if (popupDef != null) {
+                            popupDef.show(tree, e.getX(), e.getY());
+                        }
                     }
                 }
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                int row = rowForY(tree, e.getY());
+                int row = rowForY(e.getY());
                 boolean outOfBounds = row == -1;
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (outOfBounds) {
@@ -76,46 +96,29 @@ public class JClassTree extends JPanel {
                         tree.requestFocusInWindow();
                     }
                 }
-                if (!outOfBounds && popup != null && e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
-                    tree.requestFocusInWindow();
-                    tree.setSelectionRow(row);
-                    popup.show(tree, e.getX(), e.getY());
-                }
-            }
-
-            private Rectangle allRowsRectangle(JTree tree) {
-                if (tree.getRowCount() <= 0) {
-                    return new Rectangle();
-                }
-                Rectangle ret = tree.getRowBounds(0);
-                if (tree.getRowCount() > 1) {
-                    for (int i = 1; i != tree.getRowCount(); i++) {
-                        ret.add(tree.getRowBounds(i));
+                if (e.isPopupTrigger() && SwingUtilities.isRightMouseButton(e)) {
+                    lastMouseY = e.getY();
+                    if (!outOfBounds) {
+                        if (popup != null) {
+                            tree.requestFocusInWindow();
+                            if (!tree.isRowSelected(row)) {
+                                tree.setSelectionRow(row);
+                            }
+                            popup.show(tree, e.getX(), e.getY());
+                        }
+                    } else {
+                        if (popupDef != null) {
+                            popupDef.show(tree, e.getX(), e.getY());
+                        }
                     }
                 }
-                return ret;
-            }
-
-            private int rowForY(JTree tree, int y) {
-                if (tree.getRowCount() <= 0) {
-                    return -1;
-                }
-                Rectangle ret = tree.getRowBounds(0);
-
-                int row = y / ret.height;
-
-                if (row > tree.getRowCount()) {
-                    return -1;
-                }
-
-                return row;
             }
         });
 
         JScrollPane pane = new JScrollPane(this.tree);
-        pane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        Theme.borderColor().ifPresent(color -> pane.setBorder(BorderFactory.createLineBorder(color)));
         this.add(pane, BorderLayout.CENTER);
-        this.tree.setBackground(COLOR);
+        Theme.classThreeColor().ifPresent(this.tree::setBackground);
 
         this.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
     }
@@ -184,6 +187,21 @@ public class JClassTree extends JPanel {
         this.treeModel.setRoot(null);
         this.loadedClasses.clear();
         this.treeModel.reload();
+    }
+
+    public int rowForY(int y) {
+        if (this.tree.getRowCount() <= 0) {
+            return -1;
+        }
+        Rectangle ret = this.tree.getRowBounds(0);
+
+        int row = y /  ret.height;
+
+        if (row >= this.tree.getRowCount()) {
+            return -1;
+        }
+
+        return row;
     }
 
     public void setDisabled(boolean state) {
@@ -264,8 +282,9 @@ public class JClassTree extends JPanel {
     }
 
     public boolean isSelectedClass() {
-        TreePath[] paths = this.tree.getSelectionPaths();
-        return paths != null && paths.length >= 1 && ((DefaultMutableTreeNode) paths[0].getLastPathComponent()).getUserObject() instanceof ClassInfo;
+        if (this.lastMouseY == -1) return false;
+        TreePath paths = this.tree.getPathForRow(this.rowForY(this.lastMouseY));
+        return paths != null && ((DefaultMutableTreeNode) paths.getLastPathComponent()).getUserObject() instanceof ClassInfo;
     }
 
     private void expandChild(TreePath path, DefaultMutableTreeNode parent) {
@@ -289,6 +308,10 @@ public class JClassTree extends JPanel {
     @Override
     public void setComponentPopupMenu(JPopupMenu popup) {
         this.popup = popup;
+    }
+
+    public void setDefaultPopupMenu(JPopupMenu popup) {
+        this.popupDef = popup;
     }
 
     private void fillClasses(List<String> list, DefaultMutableTreeNode node) {
@@ -377,7 +400,7 @@ public class JClassTree extends JPanel {
                 this.setDisabledIcon(packageIconD);
                 this.setIcon(packageIcon);
             }
-            this.setBackgroundNonSelectionColor(COLOR);
+            Theme.classThreeColor().ifPresent(this::setBackgroundNonSelectionColor);
             return this;
         }
     }

@@ -106,15 +106,7 @@ public class AppBootstrap extends JFrame {
             String javaExecutable = os.contains("win") ? "java.exe" : "java";
             Path javaExe = file.toPath().resolve("bin").resolve(javaExecutable);
             if (file.exists() && file.isDirectory() && Files.exists(javaExe)) {
-                try {
-                    String classpath = thisJarPath.toString();
-                    Path tools = file.toPath().resolve("lib/tools.jar");
-                    if (Files.exists(tools)) {
-                        classpath += File.pathSeparator + tools;
-                    }
-                    ProcessBuilder pb = new ProcessBuilder(javaExe.toString(), "-classpath", classpath, "com.artur114.bytecodegrab.main.Main");
-                    pb.inheritIO();
-                    pb.start();
+                if (Bootstrap.bootstrap().launchJar(this.thisJarPath, file)) {
                     if (save.isSelected()) {
                         this.config.checkBox = true;
                         this.saveConfig(this.config);
@@ -124,7 +116,7 @@ public class AppBootstrap extends JFrame {
                         this.saveConfig(this.config);
                     }
                     System.exit(0);
-                } catch (IOException ex) {
+                } else {
                     JOptionPane.showMessageDialog(this, "An error occurred during a launch attempt", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } else {

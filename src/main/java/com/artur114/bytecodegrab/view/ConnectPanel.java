@@ -1,6 +1,7 @@
 package com.artur114.bytecodegrab.view;
 
 import com.artur114.bytecodegrab.model.ConnectModel;
+import com.artur114.bytecodegrab.util.Theme;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 
 import javax.swing.*;
@@ -94,7 +95,7 @@ public class ConnectPanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.add(Box.createHorizontalGlue());
         JLabel label = new JLabel();
-        label.setForeground(Color.DARK_GRAY);
+        Theme.jvmLabelColor().ifPresent(label::setForeground);
         label.setFont(label.getFont().deriveFont(18f));
         panel.add(label);
         panel.add(Box.createHorizontalGlue());
@@ -132,7 +133,7 @@ public class ConnectPanel extends JPanel {
         panelLabel.setLayout(new BoxLayout(panelLabel, BoxLayout.X_AXIS));
         panelLabel.add(Box.createHorizontalGlue());
         JLabel label = new JLabel();
-        label.setForeground(Color.DARK_GRAY);
+        Theme.jvmLabelColor().ifPresent(label::setForeground);
         label.setFont(label.getFont().deriveFont(18f));
         panelLabel.add(label);
         panelLabel.add(Box.createHorizontalGlue());

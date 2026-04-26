@@ -1,5 +1,6 @@
 package com.artur114.bytecodegrab.view;
 
+import com.artur114.bytecodegrab.frame.JGrabFrame;
 import com.artur114.bytecodegrab.jcomp.*;
 import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.ui.FlatButtonBorderExt;
@@ -8,17 +9,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.util.List;
 
 public class CodeGrabPanel extends JPanel {
@@ -42,7 +39,7 @@ public class CodeGrabPanel extends JPanel {
 
         this.add(splitPane, BorderLayout.CENTER);
         splitPane.setBorder(BorderFactory.createEmptyBorder());
-        splitPane.setDividerLocation(250);
+        splitPane.setDividerLocation(240);
 
         this.addDisconnectListener(e -> {
             this.inputTree.clear();
@@ -103,32 +100,6 @@ public class CodeGrabPanel extends JPanel {
         topGrab.add(searchPanel, BorderLayout.CENTER);
         panel.add(topGrab, BorderLayout.NORTH);
 
-        JPanel bottom = new JPanel(new BorderLayout());
-        JTextField field = new JTextField();
-        field.setFont(field.getFont().deriveFont(11f));
-        field.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1), BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
-        bottom.add(field, BorderLayout.CENTER);
-
-        JPanel panelGrab = new JPanel(new BorderLayout());
-        JButton grab = new JButton("grab");
-        grab.addActionListener(e -> {
-
-            File file = new File(field.getText());
-
-            if (file.getParentFile() == null || !file.getParentFile().exists()) {
-            } else {
-
-            }
-        });
-        grab.setPreferredSize(new Dimension(60, 19));
-        panelGrab.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 1));
-        panelGrab.add(grab, BorderLayout.CENTER);
-        bottom.add(panelGrab, BorderLayout.EAST);
-
-        bottom.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-//        panel.add(bottom, BorderLayout.SOUTH);
-
-
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem remove = new JMenuItem("Remove", Icons.iconQuad("remove", 14));
         popupMenu.add(remove);
@@ -178,7 +149,16 @@ public class CodeGrabPanel extends JPanel {
 
         JMenuItem clear = new JMenuItem("Clear", Icons.iconQuad("clear", 16));
         clear.addActionListener(e -> grabTree.clear());
+        JMenuItem grabItem = new JMenuItem("Grab classes", Icons.iconQuad("grab", 16));
+        grabItem.addActionListener(e -> {
+            if (!this.getClassesToGrab().isEmpty()) {
+                this.showGrabDialog();
+            } else {
+                JOptionPane.showMessageDialog(Application.application(), "Please add classes to grab pane", "Grabber", JOptionPane.WARNING_MESSAGE);
+            }
+        });
 
+        popupMenu.add(grabItem);
         popupMenu.add(clear);
 
         popupMenu.pack();
@@ -202,6 +182,22 @@ public class CodeGrabPanel extends JPanel {
             public void popupMenuCanceled(PopupMenuEvent e) {}
         });
 
+        JPopupMenu popupMenuDef = new JPopupMenu();
+        JMenuItem clearDef = new JMenuItem("Clear", Icons.iconQuad("clear", 16));
+        clearDef.addActionListener(e -> grabTree.clear());
+        JMenuItem grabItemDef = new JMenuItem("Grab classes", Icons.iconQuad("grab", 16));
+        grabItemDef.addActionListener(e -> {
+            if (!this.getClassesToGrab().isEmpty()) {
+                this.showGrabDialog();
+            } else {
+                JOptionPane.showMessageDialog(Application.application(), "Please add classes to grab pane", "Grabber", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        popupMenuDef.add(grabItemDef);
+        popupMenuDef.add(clearDef);
+
+        grabTree.setDefaultPopupMenu(popupMenuDef);
         grabTree.setComponentPopupMenu(popupMenu);
 
         return panel;
@@ -242,12 +238,13 @@ public class CodeGrabPanel extends JPanel {
             button.setFocusable(false);
         });
         buttons.setBorder(BorderFactory.createEmptyBorder(1, 1, 2, 0));
+//        topPanel.setBorder(BorderFactory.createLineBorder(Color.RED));
         topPanel.add(buttons);
         JCTreeSearchPanel panelSearch = new JCTreeSearchPanel(inputTree);
+        panelSearch.setBorder(BorderFactory.createCompoundBorder(panelSearch.getBorder(), BorderFactory.createEmptyBorder(0, 0, 1, 0)));
 
         CardLayout card = new CardLayout();
         JPanel panelMulti = new JPanel(card);
-        panelMulti.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
 
         JPanel panelBar = new JPanel();
         panelBar.setLayout(new BorderLayout());
@@ -342,6 +339,15 @@ public class CodeGrabPanel extends JPanel {
             public void popupMenuCanceled(PopupMenuEvent e) {}
         });
 
+        JPopupMenu popupMenuDef = new JPopupMenu();
+        JMenuItem reloadDef = new JMenuItem("Refresh all", Icons.iconQuad("refresh", 16));
+        reloadDef.addActionListener(this.refreshListenBuss::listen);
+        JMenuItem disconnectDef = new JMenuItem("Disconnect from VM", Icons.iconQuad("disconnect", 16));
+        disconnectDef.addActionListener(this.disconnectListenBuss::listen);
+        popupMenuDef.add(disconnectDef);
+        popupMenuDef.add(reloadDef);
+
+        inputTree.setDefaultPopupMenu(popupMenuDef);
         inputTree.setComponentPopupMenu(popupMenu);
 
         return panelInput;

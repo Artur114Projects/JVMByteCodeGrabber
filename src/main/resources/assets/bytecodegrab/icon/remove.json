@@ -2,6 +2,9 @@
   "themes": {
     "light": {
       "all": "light/remove.png"
+    },
+    "dark": {
+      "all": "dark/remove.png"
     }
   }
 }

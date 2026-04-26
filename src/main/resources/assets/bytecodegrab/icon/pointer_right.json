@@ -2,6 +2,9 @@
   "themes": {
     "light": {
       "all": "light/pointer_right.png"
+    },
+    "dark": {
+      "all": "dark/pointer_right.png"
     }
   }
 }

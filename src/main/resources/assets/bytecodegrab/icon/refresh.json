@@ -2,6 +2,9 @@
   "themes": {
     "light": {
       "all": "light/refresh.png"
+    },
+    "dark": {
+      "all": "dark/refresh.png"
     }
   }
 }

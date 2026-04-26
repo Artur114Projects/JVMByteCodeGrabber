@@ -2,6 +2,9 @@
   "themes": {
     "light": {
       "all": "light/disconnect.png"
+    },
+    "dark": {
+      "all": "dark/disconnect.png"
     }
   }
 }

@@ -3,6 +3,10 @@
     "light": {
       "default": "light/java_class.png",
       "disabled": "light/disabled/java_class.png"
+    },
+    "dark": {
+      "default": "dark/java_class.png",
+      "disabled": "dark/disabled/java_class.png"
     }
   }
 }

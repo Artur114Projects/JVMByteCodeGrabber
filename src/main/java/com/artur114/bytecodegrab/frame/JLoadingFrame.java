@@ -1,11 +1,9 @@
-package com.artur114.bytecodegrab.jcomp;
+package com.artur114.bytecodegrab.frame;
 
-import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.util.Icons;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 
 public class JLoadingFrame extends JFrame {
     public JLoadingFrame() {

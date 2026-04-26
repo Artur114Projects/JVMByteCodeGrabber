@@ -3,6 +3,10 @@
     "light": {
       "default": "light/icon.png",
       "disabled": "light/disabled/icon.png"
+    },
+    "dark": {
+      "default": "dark/icon.png",
+      "disabled": "dark/disabled/icon.png"
     }
   }
 }

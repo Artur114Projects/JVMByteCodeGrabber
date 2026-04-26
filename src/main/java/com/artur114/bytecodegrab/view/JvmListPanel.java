@@ -1,16 +1,19 @@
 package com.artur114.bytecodegrab.view;
 
+import com.artur114.bytecodegrab.frame.JGrabFrame;
+import com.artur114.bytecodegrab.frame.JSettingsFrame;
+import com.artur114.bytecodegrab.jcomp.JButtonsPane;
+import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.ui.FlatButtonBorderExt;
+import com.artur114.bytecodegrab.util.EnumAxis;
 import com.artur114.bytecodegrab.util.Icons;
+import com.artur114.bytecodegrab.util.Theme;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -22,6 +25,7 @@ public class JvmListPanel extends JPanel {
     private final JList<VirtualMachineDescriptor> jvmList;
     private final CardLayout layout = new CardLayout();
     private IVirtualMachinesProvider provider;
+    private final JButton settings;
     private final JButton refresh;
     private final JPanel topPanel;
     private JProgressBar lastBar;
@@ -67,25 +71,28 @@ public class JvmListPanel extends JPanel {
         this.jvmList.setCellRenderer(new JvmListCellRenderer());
 
         JPanel top = new JPanel(new BorderLayout());
-        JPanel panelB = new JPanel(new BorderLayout());
-        JButton button = new JButton(Icons.resizeIcon(Icons.icon("refresh"), 14, 14));
-        button.setBorder(new FlatButtonBorderExt().setFocusWidth(0));
-        button.setMinimumSize(new Dimension(20, 18));
-        button.setPreferredSize(new Dimension(20, 18));
-        button.setMaximumSize(new Dimension(20, 18));
-        button.setFocusable(false);
-        button.setToolTipText("Refresh JVM's");
-        button.addActionListener(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                refreshJvmList();
-            }
+        JButtonsPane buttonsPane = new JButtonsPane(EnumAxis.X_AXIS);
+        buttonsPane.addSplitter(1);
+        JButton settings = buttonsPane.createButton(Icons.iconQuad("settings", 14), button -> {
+            button.setToolTipText("App settings");
+            button.addActionListener(e -> this.showAppSettings());
         });
-        panelB.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 0));
-        panelB.add(button, BorderLayout.CENTER);
-        top.add(panelB, BorderLayout.WEST);
+        buttonsPane.addSplitter(1);
+        JButton refresh = buttonsPane.createButton(Icons.iconQuad("refresh", 14), button -> {
+            button.setToolTipText("Refresh JVM's");
+            button.addActionListener(e -> this.refreshJvmList());
+        });
+        buttonsPane.configure(button -> {
+            button.setBorder(new FlatButtonBorderExt().setFocusWidth(0));
+            button.setMinimumSize(new Dimension(18, 18));
+            button.setPreferredSize(new Dimension(18, 18));
+            button.setMaximumSize(new Dimension(18, 18));
+            button.setFocusable(false);
+        });
+        top.add(buttonsPane, BorderLayout.WEST);
 
-        this.refresh = button;
+        this.refresh = refresh;
+        this.settings = settings;
         this.topPanel = new JPanel(this.layout);
         this.topPanel.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 1));
 
@@ -104,7 +111,7 @@ public class JvmListPanel extends JPanel {
             }
         });
         panel1.add(Box.createHorizontalGlue());
-        panel1.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        Theme.borderColor().ifPresent(color -> panel1.setBorder(BorderFactory.createLineBorder(color)));
 
         JProgressBar bar = new JProgressBar();
         bar.setIndeterminate(true);
@@ -139,8 +146,10 @@ public class JvmListPanel extends JPanel {
         ListSelectionModel model = this.jvmList.getSelectionModel();
         model.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        scroll.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1), BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
+        scroll.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        Theme.borderColor().ifPresent(color -> scroll.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1), BorderFactory.createLineBorder(color))));
         this.add(scroll, BorderLayout.CENTER);
+        Theme.jvmListThreeColor().ifPresent(this.jvmList::setBackground);
     }
 
     private void load(List<VirtualMachineDescriptor> vms) {
@@ -179,6 +188,7 @@ public class JvmListPanel extends JPanel {
     public void setDisable(boolean state) {
         this.jvmList.setEnabled(!state);
         this.refresh.setEnabled(!state);
+        this.settings.setEnabled(!state);
     }
 
     public VirtualMachineDescriptor getSelectedJvm() {
@@ -191,6 +201,21 @@ public class JvmListPanel extends JPanel {
 
     public void addSelectionListener(ListSelectionListener listener) {
         this.jvmList.addListSelectionListener(listener);
+    }
+
+    private void showAppSettings() {
+        JSettingsFrame frame = new JSettingsFrame(Application.application());
+        Application.application().setEnabled(false);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                Application.application().setEnabled(true);
+                Application.application().toFront();
+            }
+        });
+
+        frame.view();
     }
 
     public interface IVirtualMachinesProvider {

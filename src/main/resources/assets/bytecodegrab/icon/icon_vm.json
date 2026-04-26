@@ -3,6 +3,10 @@
     "all": {
       "default": "light/icon_vm.png",
       "disabled": "light/disabled/icon_vm.png"
+    },
+    "dark": {
+      "default": "dark/icon_vm.png",
+      "disabled": "dark/disabled/icon_vm.png"
     }
   }
 }

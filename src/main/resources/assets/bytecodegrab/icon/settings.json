@@ -1,0 +1,10 @@
+{
+  "themes": {
+    "light": {
+      "all": "light/settings.png"
+    },
+    "dark": {
+      "all": "dark/settings.png"
+    }
+  }
+}

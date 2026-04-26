@@ -1,7 +1,9 @@
-package com.artur114.bytecodegrab.jcomp;
+package com.artur114.bytecodegrab.frame;
 
 import com.artur114.bytecodegrab.conf.AppConfig;
 import com.artur114.bytecodegrab.conf.GrabConfig;
+import com.artur114.bytecodegrab.jcomp.JCardContainer;
+import com.artur114.bytecodegrab.jcomp.JDynLabel;
 import com.artur114.bytecodegrab.main.Application;
 import com.artur114.bytecodegrab.util.*;
 import org.apache.logging.log4j.LogManager;
@@ -316,7 +318,6 @@ public class JGrabFrame extends JFrame {
         panelLabel.setLayout(new BoxLayout(panelLabel, BoxLayout.X_AXIS));
         panelLabel.add(Box.createHorizontalStrut(24));
         JLabel label = new JLabel("Wait for state");
-        label.setForeground(new Color(0, 0, 0));
         label.setFont(label.getFont().deriveFont(12.0F));
         panelLabel.add(label);
         panelLabel.add(Box.createHorizontalGlue());
@@ -341,10 +342,8 @@ public class JGrabFrame extends JFrame {
         panelTime.add(Box.createHorizontalStrut(24));
 
         JLabel labelTimePassed = new JLabel("Time passed: " + this.formatMillis(0));
-        labelTimePassed.setForeground(new Color(20, 20, 20));
 
         JLabel labelTime = new JLabel("Time left: calculating");
-        labelTime.setForeground(new Color(20, 20, 20));
 
         labelTimePassed.setFont(label.getFont().deriveFont(11.0F));
         labelTime.setFont(label.getFont().deriveFont(11.0F));
@@ -396,7 +395,6 @@ public class JGrabFrame extends JFrame {
         panelLabel.setLayout(new BoxLayout(panelLabel, BoxLayout.X_AXIS));
         panelLabel.add(Box.createHorizontalStrut(24));
         JDynLabel label = new JDynLabel(() -> "Successfully written to " + (this.output != null ? this.output.isDirectory() ? "dir" : "" : "") + ": " + (this.output != null ? this.output.getName() : "null"));
-        label.setForeground(new Color(0, 0, 0));
         label.setFont(label.getFont().deriveFont(12.0F));
         panelLabel.add(label);
         panelLabel.add(Box.createHorizontalGlue());

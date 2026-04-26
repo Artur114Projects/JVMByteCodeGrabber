@@ -23,9 +23,9 @@ public class Icons {
 
     private final Map<String, Image> cachedImagesDe = new HashMap<>();
     private final Map<String, Image> cachedImages = new HashMap<>();
-    private final ITreme treme;
+    private final IThemeRef treme;
 
-    private Icons(ITreme treme) {
+    private Icons(IThemeRef treme) {
         this.treme = treme;
     }
 
@@ -64,9 +64,20 @@ public class Icons {
                 }
             }
 
+            if (ret == null) {
+                ret = this.loadImage(this.normalise("missing.png"));
+            }
+
             return ret;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Image Failed to Load, path: {}", path);
+            LOGGER.error("Stack trace:", e);
+
+            try {
+                return this.loadImage(this.normalise("missing.png"));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 
@@ -93,7 +104,7 @@ public class Icons {
         IconMeta.IconJ iconJ = meta.themes.get("all");
 
         if (iconJ == null) {
-            iconJ = meta.themes.get(this.treme.name());
+            iconJ = meta.themes.get(this.treme.nameT());
         }
 
         if (iconJ == null) {
@@ -152,7 +163,7 @@ public class Icons {
         return Icons.class.getResource(path);
     }
 
-    public static void newIcons(ITreme treme) {
+    public static void newIcons(IThemeRef treme) {
         icons = new Icons(treme);
     }
 
@@ -167,6 +178,22 @@ public class Icons {
     public static Icon iconD(String path) {
         if (icons != null) {
             return icons.iconI(path, true);
+        } else {
+            throw new IllegalStateException("Icons cannot be used before it is initialized");
+        }
+    }
+
+    public static Icon icon(String path, int width, int height) {
+        if (icons != null) {
+            return icons.resizeIconI(icons.iconI(path, false), width, height);
+        } else {
+            throw new IllegalStateException("Icons cannot be used before it is initialized");
+        }
+    }
+
+    public static Icon iconD(String path, int width, int height) {
+        if (icons != null) {
+            return icons.resizeIconI(icons.iconI(path, true), width, height);
         } else {
             throw new IllegalStateException("Icons cannot be used before it is initialized");
         }

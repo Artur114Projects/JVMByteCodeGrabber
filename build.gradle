@@ -5,6 +5,7 @@ version = project_version
 group = project_group
 
 repositories {
+    maven {url 'https://jitpack.io'}
     mavenCentral()
 }
 
@@ -18,10 +19,8 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     implementation files(getToolsJar())
 
-    include('org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0') {
-//        exclude group: 'org.apache.logging.log4j', module: 'log4j-api'
-    }
-    include 'org.apache.logging.log4j:log4j-api:2.0-beta9'
+    include('org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0')
+    include 'com.github.tox1cozZ:jSystemThemeDetector:master-SNAPSHOT'
     include 'com.google.code.gson:gson:2.8.9'
     include 'com.formdev:flatlaf:3.7'
 }
@@ -33,13 +32,13 @@ jar {
         }
     }
 
-    exclude '**/Log4j-charsets.properties'
-    exclude '**/Log4j-events.dtd'
-    exclude '**/module-info.class'
-    exclude '**/*.xsd'
-    exclude '**/*.SF'
-    exclude '**/*.DSA'
-    exclude '**/*.RSA'
+    exclude '/module-info.class'
+    exclude '/*.properties'
+    exclude '/*.dtd'
+    exclude '/*.xsd'
+    exclude '/*.SF'
+    exclude '/*.DSA'
+    exclude '/*.RSA'
     exclude 'META-INF/**'
 
     from("licenses") {

@@ -23,6 +23,10 @@ public class AppConfig {
         return this.data.grabConfig;
     }
 
+    public ThemeConfig themeConfig() {
+        return this.data.themeConfig;
+    }
+
     public void save() {
         saveConfig(this.data);
     }
@@ -61,6 +65,7 @@ public class AppConfig {
     }
 
     private static class ConfigObject {
+        public ThemeConfig themeConfig = new ThemeConfig();
         public GrabConfig grabConfig = new GrabConfig();
     }
 }
