@@ -31,7 +31,7 @@ public class AppBootstrap extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         this.setTitle("BCG Bootstrap");
-        this.setIconImage(Icons.image("icon_black"));
+        this.setIconImage(Icons.image("icon"));
         this.setResizable(false);
 
         this.initView();
