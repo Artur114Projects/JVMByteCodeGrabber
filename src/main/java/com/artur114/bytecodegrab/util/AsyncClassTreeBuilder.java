@@ -1,35 +1,114 @@
 package com.artur114.bytecodegrab.util;
 
 import com.artur114.bytecodegrab.jcomp.JClassTree;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.*;
 
 public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTreeNode, Percent> {
-    private final List<String> classNames;
+    private final DefaultMutableTreeNode root;
+    private final List<String> classes;
+    private final Mode mode;
 
-    public AsyncClassTreeBuilder(Set<String> classNames) {
-        this.classNames = new ArrayList<>(classNames);
+    private AsyncClassTreeBuilder(@Nullable DefaultMutableTreeNode root, Set<String> classes, Mode mode) {
+        this.classes = new ArrayList<>(classes);
+        this.root = root;
+        this.mode = mode;
+
+        if (mode != Mode.BUILD) {
+            Objects.requireNonNull(this.root);
+        }
     }
 
     @Override
     protected DefaultMutableTreeNode doInBackground() throws Exception {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode(new JClassTree.PackageInfo("root"));
-        this.sortClassNamespace(this.classNames);
+        switch (this.mode) {
+            case ADD:
+                return this.add();
+            case REMOVE:
+                return this.remove();
+            case BUILD:
+                return this.build();
+            default:
+                throw new IllegalStateException("Someone faked universe!");
+        }
+    }
+
+    private DefaultMutableTreeNode add() {
+        DefaultMutableTreeNode root = this.root;
+        this.sortClassNamespace(this.classes);
         Percent percent = new Percent();
 
-        for (int i = 0; i != this.classNames.size(); i++) {
-            this.publish(percent.setPercent(i, this.classNames.size()));
+        for (int i = 0; i != this.classes.size(); i++) {
+            this.publish(percent.setPercent(i, this.classes.size()));
             if (this.isCancelled()) {
                 return root;
             }
-            String name = this.classNames.get(i);
+            String name = this.classes.get(i);
             String path = this.classPath(name);
             DefaultMutableTreeNode node = this.buildPath(path, root);
             node.add(new DefaultMutableTreeNode(new JClassTree.ClassInfo(name)));
         }
 
         this.publish(percent.setIndeterminate(true));
+
+        return this.postProcess(root);
+    }
+
+    private DefaultMutableTreeNode remove() {
+        DefaultMutableTreeNode root = this.root;
+        this.sortClassNamespace(this.classes);
+        Percent percent = new Percent();
+
+        for (int i = 0; i != this.classes.size(); i++) {
+            this.publish(percent.setPercent(i, this.classes.size()));
+            if (this.isCancelled()) {
+                return root;
+            }
+            String name = this.classes.get(i);
+            String path = this.classPath(name);
+            DefaultMutableTreeNode node = this.hasPath(path, root);
+            if (node != null) {
+                for (DefaultMutableTreeNode child : this.child(node)) {
+                    if (child.getUserObject() instanceof JClassTree.ClassInfo && ((JClassTree.ClassInfo) child.getUserObject()).fullName.equals(name)) {
+                        node.remove(child);
+                    }
+                }
+            }
+        }
+
+        this.publish(percent.setIndeterminate(true));
+
+        return this.postProcess(root);
+    }
+
+    private DefaultMutableTreeNode build() {
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(new JClassTree.PackageInfo("root"));
+        this.sortClassNamespace(this.classes);
+        Percent percent = new Percent();
+
+        for (int i = 0; i != this.classes.size(); i++) {
+            this.publish(percent.setPercent(i, this.classes.size()));
+            if (this.isCancelled()) {
+                return root;
+            }
+            String name = this.classes.get(i);
+            String path = this.classPath(name);
+            DefaultMutableTreeNode node = this.buildPath(path, root);
+            node.add(new DefaultMutableTreeNode(new JClassTree.ClassInfo(name)));
+        }
+
+        this.publish(percent.setIndeterminate(true));
+
+        return this.postProcess(root);
+    }
+
+    private DefaultMutableTreeNode postProcess(DefaultMutableTreeNode root) {
+//        if (!this.validateBranch(root)) {
+//            return root;
+//        }
 
         ArrayDeque<DefaultMutableTreeNode> queue = new ArrayDeque<>();
         queue.addLast(root);
@@ -102,6 +181,20 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         return 0;
     }
 
+    private boolean validateBranch(DefaultMutableTreeNode node) {
+        for (DefaultMutableTreeNode child : this.child(node)) {
+            if (child.getUserObject() instanceof JClassTree.PackageInfo && child.isLeaf()) {
+                node.remove(child); continue;
+            }
+
+            if (!this.validateBranch(child)) {
+                node.remove(child);
+            }
+        }
+
+        return !node.isLeaf();
+    }
+
     private String classPath(String className) {
         int last = className.lastIndexOf(".");
 
@@ -112,30 +205,123 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         }
     }
 
-    private DefaultMutableTreeNode buildPath(String path, DefaultMutableTreeNode from) {
+    public DefaultMutableTreeNode branch(DefaultMutableTreeNode from, List<String> context) {
+        JClassTree.PackageInfo info = (JClassTree.PackageInfo) from.getUserObject();
+        if (!info.isCompressed()) {
+            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(context.get(context.size() - 1));
+            from.add(ret);
+            return ret;
+        }
+        int index = -1;
+        for (int i = 0; i != context.size(); i++) {
+            if (context.get(i).equals(info.firstName())) {
+                index = i; break;
+            }
+        }
+        if (index == -1) {
+            return from;
+        }
+        List<String> normalised = context.subList(index, context.size());
+        int hasIndex = 0;
+        String nodeName = "";
+        for (int i = 0; i != normalised.size(); i++) {
+            if (!info.hasPackage(normalised.get(i))) {
+                nodeName = normalised.get(i); hasIndex = i; break;
+            }
+        }
+
+        if (nodeName.isEmpty() && normalised.size() <= info.pack.size()) {
+            return from;
+        }
+
+        if (hasIndex >= info.pack.size()) {
+            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(nodeName));
+            from.add(ret);
+            return ret;
+        }
+
+        DefaultMutableTreeNode norm = new DefaultMutableTreeNode(new JClassTree.PackageInfo(info.pack.subList(0, hasIndex)));
+        this.replaceNode(from, norm);
+        this.insertNext(norm, new DefaultMutableTreeNode(new JClassTree.PackageInfo(info.pack.subList(hasIndex, info.pack.size()))));
+        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(nodeName));
+        norm.add(ret);
+
+        return ret;
+    }
+
+    private DefaultMutableTreeNode hasPath(String path, DefaultMutableTreeNode from) {
+        List<String> buildContext = new ArrayList<>();
         DefaultMutableTreeNode current = from;
 
         for (String node : path.split("\\.")) {
-            DefaultMutableTreeNode child = this.childPackage(current, node);
-            if (child == null) {
-                child = new DefaultMutableTreeNode(new JClassTree.PackageInfo(node));
-                current.add(child);
+            buildContext.add(node);
+            current = this.childPackage(current, buildContext);
+            if (current == null) {
+                return null;
             }
-
-            current = child;
         }
 
         return current;
     }
 
-    private DefaultMutableTreeNode childPackage(DefaultMutableTreeNode node, String packageName) {
+    private DefaultMutableTreeNode buildPath(String path, DefaultMutableTreeNode from) {
+        List<String> buildContext = new ArrayList<>();
+        DefaultMutableTreeNode current = from;
+
+        for (String node : path.split("\\.")) {
+            buildContext.add(node); current = this.childPackageNNull(current, buildContext);
+        }
+
+        return current;
+    }
+
+    private @NotNull DefaultMutableTreeNode childPackageNNull(DefaultMutableTreeNode node, List<String> context) {
+        String packageName = context.get(context.size() - 1);
+        DefaultMutableTreeNode n = this.childPackage(node, context);
+        if (n != null) return n;
+        JClassTree.PackageInfo nodeInfo = ((JClassTree.PackageInfo) node.getUserObject());
+        if (nodeInfo.isCompressed() && context.size() > 1 && nodeInfo.hasPackage(context.get(context.size() - 2))) {
+            return this.branch(node, context);
+        } else {
+            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(packageName));
+            node.add(ret);
+            return ret;
+        }
+    }
+
+    private @Nullable DefaultMutableTreeNode childPackage(DefaultMutableTreeNode node, List<String> context) {
+        String packageName = context.get(context.size() - 1);
         for (int i = 0; i != node.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
-            if (child.getUserObject() instanceof JClassTree.PackageInfo && packageName.equals(((JClassTree.PackageInfo) child.getUserObject()).name)) {
+            if (child.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) child.getUserObject()).hasPackage(packageName)) {
                 return child;
             }
         }
         return null;
+    }
+
+    private DefaultMutableTreeNode replaceNode(DefaultMutableTreeNode node, DefaultMutableTreeNode to) {
+        List<DefaultMutableTreeNode> child = this.child(node);
+        node.removeAllChildren();
+        DefaultMutableTreeNode parent = ((DefaultMutableTreeNode) node.getParent());
+        if (parent != null) {
+            parent.remove(node);
+            parent.add(to);
+        }
+        for (DefaultMutableTreeNode childChild : child) {
+            to.add(childChild);
+        }
+        return to;
+    }
+
+    private DefaultMutableTreeNode insertNext(DefaultMutableTreeNode node, DefaultMutableTreeNode next) {
+        List<DefaultMutableTreeNode> child = this.child(node);
+        node.removeAllChildren();
+        node.add(next);
+        for (DefaultMutableTreeNode childChild : child) {
+            next.add(childChild);
+        }
+        return next;
     }
 
     private DefaultMutableTreeNode compress(DefaultMutableTreeNode nodeParent, DefaultMutableTreeNode node, DefaultMutableTreeNode child) {
@@ -156,4 +342,19 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         return ret;
     }
 
+    private enum Mode {
+        BUILD, ADD, REMOVE;
+    }
+
+    public static AsyncClassTreeBuilder build(Set<String> classNames) {
+        return new AsyncClassTreeBuilder(null, classNames, Mode.BUILD);
+    }
+
+    public static AsyncClassTreeBuilder remove(DefaultMutableTreeNode root, Set<String> classNames) {
+        return new AsyncClassTreeBuilder(root, classNames, Mode.REMOVE);
+    }
+
+    public static AsyncClassTreeBuilder add(DefaultMutableTreeNode root, Set<String> classNames) {
+        return new AsyncClassTreeBuilder(root, classNames, Mode.ADD);
+    }
 }

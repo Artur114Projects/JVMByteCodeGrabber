@@ -1,10 +1,9 @@
 package com.artur114.bytecodegrab.jcomp;
 
 import com.artur114.bytecodegrab.util.AsyncClassTreeBuilder;
+import com.artur114.bytecodegrab.util.AsyncTreeManager;
 import com.artur114.bytecodegrab.util.Icons;
 import com.artur114.bytecodegrab.util.Theme;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 
@@ -17,9 +16,9 @@ import java.util.List;
 import java.util.*;
 
 public class JClassTree extends JPanel {
-    private static final Logger log = LoggerFactory.getLogger(JClassTree.class);
     private final Set<String> loadedClasses = new HashSet<>();
     private final DefaultTreeModel treeModel;
+    private AsyncTreeManager currentManager;
     private AsyncClassTreeBuilder builder;
     private String currentFilter;
     public boolean keepExpanded = false;
@@ -124,20 +123,26 @@ public class JClassTree extends JPanel {
     }
 
     public AsyncClassTreeBuilder removeClassNames(List<String> classNames) {
+        classNames.removeAll(this.loadedClasses);
         classNames.forEach(this.loadedClasses::remove);
 
         if (this.currentFilter == null || this.currentFilter.isEmpty()) {
-            return this.updateTree(this.loadedClasses);
+            AsyncClassTreeBuilder build = AsyncClassTreeBuilder.remove(this.notNullRoot(), new HashSet<>(classNames));
+            build.execute();
+            return this.runBuilder(build);
         } else {
             return this.searchBy(this.currentFilter);
         }
     }
 
     public AsyncClassTreeBuilder addClassNames(List<String> classNames) {
+        classNames.removeAll(this.loadedClasses);
         this.loadedClasses.addAll(classNames);
 
         if (this.currentFilter == null || this.currentFilter.isEmpty()) {
-            return this.updateTree(this.loadedClasses);
+            AsyncClassTreeBuilder build = AsyncClassTreeBuilder.add(this.notNullRoot(), new HashSet<>(classNames));
+            build.execute();
+            return this.runBuilder(build);
         } else {
             return this.searchBy(this.currentFilter);
         }
@@ -155,32 +160,9 @@ public class JClassTree extends JPanel {
     }
 
     public AsyncClassTreeBuilder updateTree(Set<String> classNames) {
-        if (this.builder != null && !this.builder.isDone()) {
-            this.builder.cancel(true);
-        }
-
-        Timer timer = new Timer(50, e -> {
-            if (!this.builder.isDone()) {
-                this.tree.setEnabled(false);
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
-
-        this.builder = new AsyncClassTreeBuilder(classNames);
-        this.builder.execute();
-
-        this.builder.addDoneListener((root) -> {
-            this.tree.setEnabled(true);
-            this.treeModel.setRoot(root);
-            this.treeModel.reload();
-
-            if (this.keepExpanded) {
-                this.expandAll();
-            }
-        });
-
-        return this.builder;
+        AsyncClassTreeBuilder build = AsyncClassTreeBuilder.build(classNames);
+        build.execute();
+        return this.runBuilder(build);
     }
 
     public void clear() {
@@ -251,9 +233,12 @@ public class JClassTree extends JPanel {
         if (paths == null) {
             return;
         }
-        for (TreePath path : paths) {
-            this.expandChild(path, (DefaultMutableTreeNode) path.getLastPathComponent());
+
+        if (this.currentManager != null && !this.currentManager.isDone()) {
+            this.currentManager.cancel(true);
         }
+
+        this.currentManager = AsyncTreeManager.expand(paths, this.tree);
     }
 
     public void collapseSelected() {
@@ -261,9 +246,12 @@ public class JClassTree extends JPanel {
         if (paths == null) {
             return;
         }
-        for (TreePath path : paths) {
-            this.collapseChild(path, (DefaultMutableTreeNode) path.getLastPathComponent());
+
+        if (this.currentManager != null && !this.currentManager.isDone()) {
+            this.currentManager.cancel(true);
         }
+
+        this.currentManager = AsyncTreeManager.collapse(paths, this.tree).setBatchSize(10);
     }
 
     public void expandAll() {
@@ -287,24 +275,6 @@ public class JClassTree extends JPanel {
         return paths != null && ((DefaultMutableTreeNode) paths.getLastPathComponent()).getUserObject() instanceof ClassInfo;
     }
 
-    private void expandChild(TreePath path, DefaultMutableTreeNode parent) {
-        this.tree.expandPath(path);
-
-        for (DefaultMutableTreeNode node : this.child(parent)) {
-            TreePath newPath = path.pathByAddingChild(node);
-            this.expandChild(newPath, node);
-        }
-    }
-
-    private void collapseChild(TreePath path, DefaultMutableTreeNode parent) {
-        for (DefaultMutableTreeNode node : this.child(parent)) {
-            TreePath newPath = path.pathByAddingChild(node);
-            this.collapseChild(newPath, node);
-        }
-
-        this.tree.collapsePath(path);
-    }
-
     @Override
     public void setComponentPopupMenu(JPopupMenu popup) {
         this.popup = popup;
@@ -312,6 +282,55 @@ public class JClassTree extends JPanel {
 
     public void setDefaultPopupMenu(JPopupMenu popup) {
         this.popupDef = popup;
+    }
+
+    private AsyncClassTreeBuilder runBuilder(AsyncClassTreeBuilder builder) {
+        if (this.builder != null && !this.builder.isDone()) {
+            this.builder.cancel(true);
+        }
+
+        Timer timer = new Timer(50, e -> {
+            if (!this.builder.isDone()) {
+                this.tree.setEnabled(false);
+            }
+        });
+        timer.setRepeats(false);
+        timer.start();
+        Set<TreePath> expanded = this.saveExpandedPaths();
+        builder.addDoneListener((root) -> {
+            this.tree.setEnabled(true);
+            if (this.treeModel.getRoot() != root) {
+                this.treeModel.setRoot(root);
+                this.treeModel.reload();
+            } else {
+                this.treeModel.reload();
+                this.restoreExpandedPaths(expanded);
+            }
+
+            if (this.keepExpanded) {
+                this.expandAll();
+            }
+        });
+
+        return this.builder = builder;
+    }
+
+    private Set<TreePath> saveExpandedPaths() {
+        Set<TreePath> paths = new HashSet<>();
+        for (int i = 0; i < this.tree.getRowCount(); i++) {
+            if (this.tree.isExpanded(i)) {
+                paths.add(this.tree.getPathForRow(i));
+            }
+        }
+        return paths;
+    }
+
+    private void restoreExpandedPaths(Set<TreePath> paths) {
+        for (TreePath path : paths) {
+            try {
+                this.tree.expandPath(path);
+            } catch (Exception ignored) {}
+        }
     }
 
     private void fillClasses(List<String> list, DefaultMutableTreeNode node) {
@@ -334,6 +353,15 @@ public class JClassTree extends JPanel {
         return ret;
     }
 
+    private DefaultMutableTreeNode notNullRoot() {
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) this.treeModel.getRoot();
+        if (root == null) {
+            root = new DefaultMutableTreeNode(new JClassTree.PackageInfo("root"));
+            this.treeModel.setRoot(root);
+        }
+        return root;
+    }
+
     public static class ClassInfo {
         private final String simpleName;
         public final String fullName;
@@ -350,11 +378,42 @@ public class JClassTree extends JPanel {
     }
 
     public static class PackageInfo {
-        public int classesCount;
+        public final List<String> pack;
         public final String name;
+        public int classesCount;
 
         public PackageInfo(String name) {
-            this.name = name;
+            this.pack = Collections.singletonList(name);
+            this.name = this.formatPack(this.pack);
+        }
+
+        public PackageInfo(List<String> names) {
+            this.name = this.formatPack(names);
+            this.pack = names;
+        }
+
+        public String firstName() {
+            return this.pack.get(0);
+        }
+
+        public String lastLast() {
+            return this.pack.get(this.pack.size() - 1);
+        }
+
+        public boolean isCompressed() {
+            return this.pack.size() > 1;
+        }
+
+        public boolean hasPackage(String name) {
+            return this.pack.contains(name);
+        }
+
+        private String formatPack(List<String> pack) {
+            StringBuilder builder = new StringBuilder();
+            for (String p : pack) {
+                builder.append(p).append('.');
+            }
+            return builder.substring(0, builder.lastIndexOf("."));
         }
 
         @Override
@@ -377,15 +436,17 @@ public class JClassTree extends JPanel {
         }
 
         public static PackageInfo merge(PackageInfo info, PackageInfo childInfo) {
-            return new PackageInfo(info.name + "." + childInfo.name);
+            List<String> ret = new ArrayList<>(info.pack);
+            ret.addAll(childInfo.pack);
+            return new PackageInfo(Collections.unmodifiableList(ret));
         }
     }
 
     private static class ClassTreeCellRenderer extends DefaultTreeCellRenderer {
         private final Icon packageIcon = Icons.iconQuad("folder", 20);
-        private final Icon classIcon = Icons.iconQuad("java_class", 20);
         private final Icon packageIconD = Icons.iconQuadD("folder", 20);
-        private final Icon classIconD = Icons.iconQuadD("java_class", 20);
+        private final Icon classIcon = Icons.icon("java_class");
+        private final Icon classIconD = Icons.iconD("java_class");
 
 
         @Override

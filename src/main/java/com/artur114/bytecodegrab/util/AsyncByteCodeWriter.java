@@ -22,6 +22,8 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+// TODO Додать настройку чтобы додавать классы в output
+// TODO Возможно Додать пресеты сохранения
 public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCodeWriter.IGrabState> {
     private static final Logger LOGGER = LogManager.getLogger("Model/AsyncByteCodeWriter");
     private final EnumSaveType saveType;
