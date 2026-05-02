@@ -256,10 +256,10 @@ public class JvmListPanel extends JPanel {
 
         private Icon iconDisabledFor(String machine) {
             if (machine.contains("GradleDaemon") || machine.contains("org.gradle.launcher")) {
-                return Icons.iconQuadD("gradle", 14);
+                return Icons.iconQuadD("gradle", 16);
             }
             if (machine.contains("com.intellij.idea")) {
-                return Icons.iconQuadD("idea", 14);
+                return Icons.iconQuadD("idea", 16);
             }
             if (machine.contains("bytecodegrab.main.Main") || machine.toLowerCase().contains("bcg")) {
                 return Icons.iconQuadD("icon_vm", 16);

@@ -443,8 +443,11 @@ public class CodeGrabPanel extends JPanel {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                Application.application().setEnabled(true);
-                Application.application().toFront();
+                frame.setVisible(false);
+                SwingUtilities.invokeLater(() -> {
+                    Application.application().setEnabled(true);
+                    Application.application().toFront();
+                });
             }
         });
 

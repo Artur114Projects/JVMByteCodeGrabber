@@ -123,7 +123,6 @@ public class JClassTree extends JPanel {
     }
 
     public AsyncClassTreeBuilder removeClassNames(List<String> classNames) {
-        classNames.removeAll(this.loadedClasses);
         classNames.forEach(this.loadedClasses::remove);
 
         if (this.currentFilter == null || this.currentFilter.isEmpty()) {
@@ -251,7 +250,7 @@ public class JClassTree extends JPanel {
             this.currentManager.cancel(true);
         }
 
-        this.currentManager = AsyncTreeManager.collapse(paths, this.tree).setBatchSize(10);
+        this.currentManager = AsyncTreeManager.collapse(paths, this.tree);
     }
 
     public void expandAll() {
@@ -404,7 +403,7 @@ public class JClassTree extends JPanel {
             return this.pack.size() > 1;
         }
 
-        public boolean hasPackage(String name) {
+        public boolean hasPackage(String name) { // TODO Говно, не работает, починить
             return this.pack.contains(name);
         }
 

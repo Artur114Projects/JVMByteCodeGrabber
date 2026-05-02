@@ -6,6 +6,7 @@ import com.artur114.bytecodegrab.net.NetReplyException;
 import com.artur114.bytecodegrab.net.ServerSocketThread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -225,13 +226,6 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
     }
 
     private File saveAsDir(Map<String, byte[]> classes, GrabState state, int classesCount) {
-        File file;
-        try {
-            file = File.createTempFile("bcg-temp-write", "");
-        } catch (IOException e) {
-            e.printStackTrace(System.err); return null;
-        }
-
         long startTime = System.currentTimeMillis();
         List<String> names = new ArrayList<>(classes.keySet());
         for (int i = 0; i != names.size(); i++) {
@@ -252,7 +246,7 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
             this.publish(state);
         }
 
-        return file;
+        return null;
     }
 
     private File saveAsJar(Map<String, byte[]> classes, GrabState state, int classesCount) {

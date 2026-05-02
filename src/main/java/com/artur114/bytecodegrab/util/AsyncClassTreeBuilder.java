@@ -106,9 +106,9 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
     }
 
     private DefaultMutableTreeNode postProcess(DefaultMutableTreeNode root) {
-//        if (!this.validateBranch(root)) {
-//            return root;
-//        }
+        if (!this.validateBranch(root)) {
+            return root;
+        }
 
         ArrayDeque<DefaultMutableTreeNode> queue = new ArrayDeque<>();
         queue.addLast(root);
@@ -192,7 +192,7 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
             }
         }
 
-        return !node.isLeaf();
+        return node.getUserObject() instanceof JClassTree.ClassInfo || !node.isLeaf();
     }
 
     private String classPath(String className) {
@@ -291,6 +291,9 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
 
     private @Nullable DefaultMutableTreeNode childPackage(DefaultMutableTreeNode node, List<String> context) {
         String packageName = context.get(context.size() - 1);
+        if (node.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) node.getUserObject()).hasPackage(packageName)) {
+            return node;
+        }
         for (int i = 0; i != node.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
             if (child.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) child.getUserObject()).hasPackage(packageName)) {

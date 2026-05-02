@@ -13,7 +13,6 @@ public class AsyncTreeManager extends SwingWorkerListened<Void, List<TreePath>> 
     private final Predicate<TreePath> shouldCollect;
     private final Consumer<TreePath> applyState;
     private final TreePath[] toExpand;
-    private int batchSize = 25;
     private int sleepTime = 25;
 
     private AsyncTreeManager(TreePath[] toExpand, boolean reverseCollect, Consumer<TreePath> applyState, Predicate<TreePath> shouldCollect) {
@@ -23,14 +22,6 @@ public class AsyncTreeManager extends SwingWorkerListened<Void, List<TreePath>> 
         this.toExpand = toExpand;
     }
 
-    public AsyncTreeManager setBatchSize(int batchSize) {
-        this.batchSize = batchSize; return this;
-    }
-
-    public AsyncTreeManager setSleepTime(int sleepTime) {
-        this.sleepTime = sleepTime; return this;
-    }
-
     @Override
     protected Void doInBackground() throws Exception {
         List<TreePath> paths = new ArrayList<>();
@@ -38,9 +29,10 @@ public class AsyncTreeManager extends SwingWorkerListened<Void, List<TreePath>> 
             this.collectPaths(path, paths);
         }
 
-        for (int i = 0; i < paths.size(); i += this.batchSize) {
+        final int batchSize = 25;
+        for (int i = 0; i < paths.size(); i += batchSize) {
             if (isCancelled()) break;
-            int end = Math.min(i + this.batchSize, paths.size());
+            int end = Math.min(i + batchSize, paths.size());
             List<TreePath> batch = paths.subList(i, end);
             this.publish(batch);
             Thread.sleep(this.sleepTime);
@@ -54,11 +46,13 @@ public class AsyncTreeManager extends SwingWorkerListened<Void, List<TreePath>> 
         if (isCancelled()) {
             return;
         }
+        long time = System.currentTimeMillis();
         for (List<TreePath> batch : chunks) {
             for (TreePath path : batch) {
                 this.applyState.accept(path);
             }
         }
+        this.sleepTime = (int) Math.min((System.currentTimeMillis() - time), Integer.MAX_VALUE);
     }
 
     private void collectPaths(TreePath parentPath, List<TreePath> collector) {

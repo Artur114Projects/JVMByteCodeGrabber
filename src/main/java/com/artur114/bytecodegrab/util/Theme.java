@@ -50,6 +50,17 @@ public class Theme {
         }
     }
 
+    private Color loadingFrameColorI() {
+        switch (this.theme.nameT()) {
+            case "light":
+                return null;
+            case "dark":
+                return new Color(0x323436);
+            default:
+                return null;
+        }
+    }
+
     private Color jvmLabelColorI() {
         switch (this.theme.nameT()) {
             case "light":
@@ -96,6 +107,14 @@ public class Theme {
 
     public static void newTheme(IThemeRef theme) {
         themeInstance = new Theme(theme);
+    }
+
+    public static Optional<Color> loadingFrameColor() {
+        if (themeInstance != null) {
+            return Optional.ofNullable(themeInstance.loadingFrameColorI());
+        } else {
+            throw new IllegalStateException("Theme cannot be used before it is initialized");
+        }
     }
 
     public static Optional<Color> jvmLabelColor() {
