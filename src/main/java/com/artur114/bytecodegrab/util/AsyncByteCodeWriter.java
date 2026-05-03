@@ -1,29 +1,25 @@
 package com.artur114.bytecodegrab.util;
 
-import com.artur114.bytecodegrab.agent.GrabberAgent;
 import com.artur114.bytecodegrab.net.AgentConnection;
 import com.artur114.bytecodegrab.net.NetReplyException;
 import com.artur114.bytecodegrab.net.ServerSocketThread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-// TODO Додать настройку чтобы додавать классы в output
 // TODO Возможно Додать пресеты сохранения
 public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCodeWriter.IGrabState> {
     private static final Logger LOGGER = LogManager.getLogger("Model/AsyncByteCodeWriter");
@@ -173,14 +169,14 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         File file = null;
         switch (saveType) {
             case JAR:
-                file = this.saveAsJar(this.prepareNameSpace(classes, this.data.type()), state, classesCount);
+                file = this.saveAsJar(this.prepareNameSpace(classes, this.data.cnType()), state, classesCount);
                 break;
             case ZIP:
-                file = this.saveAsZip(this.prepareNameSpace(classes, this.data.type()), state, classesCount);
+                file = this.saveAsZip(this.prepareNameSpace(classes, this.data.cnType()), state, classesCount);
                 break;
             case DIR:
-                file = this.saveAsDir(this.prepareNameSpace(classes, this.data.type()), state, classesCount);
-                break;
+                this.saveAsDir(this.prepareNameSpace(classes, this.data.cnType()), state, classesCount);
+                return;
         }
 
         if (file != null) {
@@ -198,7 +194,7 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         }
     }
 
-    private Map<String, byte[]> prepareNameSpace(Map<String, byte[]> classes, IGrabStartData.WriteType type) {
+    private Map<String, byte[]> prepareNameSpace(Map<String, byte[]> classes, IGrabStartData.ClassNameType type) {
         Map<String, byte[]> ret = new HashMap<>();
 
         classes.forEach((k, v) -> {
@@ -225,28 +221,36 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         return ret;
     }
 
-    private File saveAsDir(Map<String, byte[]> classes, GrabState state, int classesCount) {
+    private void saveAsDir(Map<String, byte[]> classes, GrabState state, int classesCount) {
         long startTime = System.currentTimeMillis();
         List<String> names = new ArrayList<>(classes.keySet());
         for (int i = 0; i != names.size(); i++) {
             if (this.isCancelled()) {
-                return null;
+                return;
             }
             String name = names.get(i);
-            File entry = new File(this.outputFile.getAbsolutePath() + "/" + name.substring(0, name.lastIndexOf("/")));
-            if (entry.mkdirs()) {
-                try (FileOutputStream fos = new FileOutputStream(this.outputFile.getAbsolutePath() + "/" + name)) {
+            int last = name.lastIndexOf("/");
+            if (last == -1) {
+                last = 0;
+            }
+            File entry = new File(this.outputFile.getAbsolutePath(), name.substring(0, last));
+            if (!entry.exists()) {
+                entry.mkdirs();
+            }
+
+            File path = new File(this.outputFile.getAbsolutePath(), name);
+            if (this.data.writeType() != IGrabStartData.WriteType.ADD_S || !path.exists()) {
+                try (FileOutputStream fos = new FileOutputStream(path)) {
                     fos.write(classes.get(name));
                 } catch (IOException e) {
                     e.printStackTrace(System.err);
                 }
             }
+
             state.timeLeft = this.computeLeftTime(startTime, i, classesCount);
             state.percent.setPercent(i, classesCount);
             this.publish(state);
         }
-
-        return null;
     }
 
     private File saveAsJar(Map<String, byte[]> classes, GrabState state, int classesCount) {
@@ -256,12 +260,17 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         } catch (IOException e) {
             e.printStackTrace(System.err); return null;
         }
-        Manifest manifest = new Manifest();
-        manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
-        manifest.getMainAttributes().putValue("Grabbed-Bytecode-Classes-Count", String.valueOf(classesCount));
 
         long startTime = System.currentTimeMillis();
-        try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(file.toPath()), manifest)) {
+        try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(file.toPath()), this.manifest(classesCount))) {
+            List<String> existing = new ArrayList<>();
+            if (this.data.writeType() != IGrabStartData.WriteType.REWRITE && this.outputFile.exists()) {
+                existing = this.loadExistingEntries(jos, classes.keySet(), state);
+                state.state = "Writing output";
+                state.percent.setPercent(0);
+                this.publish(state);
+            }
+
             List<String> names = new ArrayList<>(classes.keySet());
             for (int i = 0; i != names.size(); i++) {
                 if (this.isCancelled()) {
@@ -270,9 +279,11 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
                 }
 
                 String name = names.get(i);
-                jos.putNextEntry(new JarEntry(name));
-                jos.write(classes.get(name));
-                jos.closeEntry();
+                if (this.data.writeType() != IGrabStartData.WriteType.ADD_S || !existing.contains(name)) {
+                    jos.putNextEntry(new JarEntry(name));
+                    jos.write(classes.get(name));
+                    jos.closeEntry();
+                }
 
                 state.timeLeft = this.computeLeftTime(startTime, i, classesCount);
                 state.percent.setPercent(i, classesCount);
@@ -283,6 +294,63 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         }
 
         return file;
+    }
+
+    private Manifest manifest(int classesCount) throws IOException {
+        if (this.data.writeType() != IGrabStartData.WriteType.REWRITE && this.outputFile.exists()) {
+            try (JarInputStream jis = new JarInputStream(Files.newInputStream(this.outputFile.toPath()))) {
+                Manifest man = jis.getManifest();
+                if (man != null) {
+                    return man;
+                }
+            }
+        }
+
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
+        manifest.getMainAttributes().putValue("Grabbed-Bytecode-Classes-Count", String.valueOf(classesCount));
+
+        return manifest;
+    }
+
+    private List<String> loadExistingEntries(JarOutputStream jos, Collection<String> grabbed, GrabState state) throws IOException {
+        state.state = "Loading existing output";
+        state.percent.setIndeterminate(true);
+        this.publish(state);
+
+        int totalEntries = 0;
+        try (JarInputStream jis = new JarInputStream(Files.newInputStream(this.outputFile.toPath()))) {
+            while (jis.getNextJarEntry() != null) {
+                totalEntries++;
+            }
+        }
+
+        int processed = 0;
+        List<String> existing = new ArrayList<>();
+        try (JarInputStream jis = new JarInputStream(Files.newInputStream(this.outputFile.toPath()))) {
+            JarEntry entry;
+            while ((entry = jis.getNextJarEntry()) != null) {
+                if (entry.getName().equals("META-INF/MANIFEST.MF")) {
+                    processed++; continue;
+                }
+                state.percent.setPercent(processed, totalEntries);
+                this.publish(state);
+
+                if (this.data.writeType() != IGrabStartData.WriteType.ADD_R || !grabbed.contains(entry.getName())) {
+                    existing.add(entry.getName());
+                    jos.putNextEntry(new JarEntry(entry.getName()));
+                    byte[] buffer = new byte[4096];
+                    int len;
+                    while ((len = jis.read(buffer)) > 0) {
+                        jos.write(buffer, 0, len);
+                    }
+                    jos.closeEntry();
+                }
+
+                processed++;
+            }
+        }
+        return existing;
     }
 
     private File saveAsZip(Map<String, byte[]> classes, GrabState state, int classesCount) {
@@ -293,7 +361,15 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
             e.printStackTrace(System.err); return null;
         }
         long startTime = System.currentTimeMillis();
-        try (ZipOutputStream jos = new ZipOutputStream(Files.newOutputStream(file.toPath()))) {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(file.toPath()))) {
+            List<String> existing = new ArrayList<>();
+            if (this.data.writeType() != IGrabStartData.WriteType.REWRITE && this.outputFile.exists()) {
+                existing = this.loadExistingEntries(zos, classes.keySet(), state);
+                state.state = "Writing output";
+                state.percent.setPercent(0);
+                this.publish(state);
+            }
+
             List<String> names = new ArrayList<>(classes.keySet());
             for (int i = 0; i != names.size(); i++) {
                 if (this.isCancelled()) {
@@ -302,9 +378,11 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
                 }
 
                 String name = names.get(i);
-                jos.putNextEntry(new ZipEntry(name));
-                jos.write(classes.get(name));
-                jos.closeEntry();
+                if (this.data.writeType() != IGrabStartData.WriteType.ADD_S || !existing.contains(name)) {
+                    zos.putNextEntry(new ZipEntry(name));
+                    zos.write(classes.get(name));
+                    zos.closeEntry();
+                }
 
                 state.timeLeft = this.computeLeftTime(startTime, i, classesCount);
                 state.percent.setPercent(i, classesCount);
@@ -315,6 +393,43 @@ public class AsyncByteCodeWriter extends SwingWorkerListened<File, AsyncByteCode
         }
 
         return file;
+    }
+
+    private List<String> loadExistingEntries(ZipOutputStream zos, Collection<String> grabbed, GrabState state) throws IOException {
+        state.state = "Loading existing output";
+        state.percent.setIndeterminate(true);
+        this.publish(state);
+
+        int totalEntries = 0;
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(this.outputFile.toPath()))) {
+            while (zis.getNextEntry() != null) {
+                totalEntries++;
+            }
+        }
+
+        int processed = 0;
+        List<String> existing = new ArrayList<>();
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(this.outputFile.toPath()))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                state.percent.setPercent(processed, totalEntries);
+                this.publish(state);
+
+                if (this.data.writeType() != IGrabStartData.WriteType.ADD_R || !grabbed.contains(entry.getName())) {
+                    existing.add(entry.getName());
+                    zos.putNextEntry(new JarEntry(entry.getName()));
+                    byte[] buffer = new byte[4096];
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        zos.write(buffer, 0, len);
+                    }
+                    zos.closeEntry();
+                }
+
+                processed++;
+            }
+        }
+        return existing;
     }
 
     private File fixFileIfNeeded(File file) {

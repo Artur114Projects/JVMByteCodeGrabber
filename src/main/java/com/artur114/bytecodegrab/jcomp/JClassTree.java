@@ -135,6 +135,7 @@ public class JClassTree extends JPanel {
     }
 
     public AsyncClassTreeBuilder addClassNames(List<String> classNames) {
+        classNames = new ArrayList<>(classNames);
         classNames.removeAll(this.loadedClasses);
         this.loadedClasses.addAll(classNames);
 
@@ -377,18 +378,33 @@ public class JClassTree extends JPanel {
     }
 
     public static class PackageInfo {
+        public final List<String> beforePack;
         public final List<String> pack;
         public final String name;
         public int classesCount;
 
         public PackageInfo(String name) {
+            this.beforePack = Collections.emptyList();
             this.pack = Collections.singletonList(name);
             this.name = this.formatPack(this.pack);
         }
 
         public PackageInfo(List<String> names) {
-            this.name = this.formatPack(names);
-            this.pack = names;
+            this.beforePack = Collections.emptyList();
+            this.pack = new ArrayList<>(names);
+            this.name = this.formatPack(this.pack);
+        }
+
+        public PackageInfo(List<String> beforePack, String name) {
+            this.beforePack = new ArrayList<>(beforePack);
+            this.pack = Collections.singletonList(name);
+            this.name = this.formatPack(this.pack);
+        }
+
+        public PackageInfo(List<String> beforePack, List<String> names) {
+            this.beforePack = new ArrayList<>(beforePack);
+            this.pack = new ArrayList<>(names);
+            this.name = this.formatPack(this.pack);
         }
 
         public String firstName() {
@@ -403,9 +419,29 @@ public class JClassTree extends JPanel {
             return this.pack.size() > 1;
         }
 
-        public boolean hasPackage(String name) { // TODO Говно, не работает, починить
-            return this.pack.contains(name);
+        public boolean hasPackage(String pack) {
+            return this.pack.contains(pack);
         }
+
+        public boolean hasPackage(List<String> context) {
+            for (int i = 0; i != context.size(); i++) {
+                String pack = null;
+
+                if (i < this.beforePack.size()) {
+                    pack = this.beforePack.get(i);
+                } else {
+                    if ((i - this.beforePack.size()) < this.pack.size()) {
+                        pack = this.pack.get(i - this.beforePack.size());
+                    }
+                }
+
+                if (pack == null || !pack.equals(context.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
 
         private String formatPack(List<String> pack) {
             StringBuilder builder = new StringBuilder();
@@ -437,7 +473,7 @@ public class JClassTree extends JPanel {
         public static PackageInfo merge(PackageInfo info, PackageInfo childInfo) {
             List<String> ret = new ArrayList<>(info.pack);
             ret.addAll(childInfo.pack);
-            return new PackageInfo(Collections.unmodifiableList(ret));
+            return new PackageInfo(info.beforePack, Collections.unmodifiableList(ret));
         }
     }
 

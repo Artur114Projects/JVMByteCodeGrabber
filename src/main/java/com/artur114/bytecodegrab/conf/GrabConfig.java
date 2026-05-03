@@ -4,5 +4,6 @@ public class GrabConfig {
     public boolean checkBoxOPState = false;
     public boolean checkBoxState = false;
     public String lastSaveFolder = "";
-    public int lastWriteFormat = 0;
+    public int lastClassNameType = 0;
+    public int lastWriteType = 0;
 }

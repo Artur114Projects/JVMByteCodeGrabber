@@ -38,7 +38,7 @@ public class JGrabFrame extends JFrame {
 
     public JGrabFrame(Application parent) {
         this.config = parent.appData;
-        this.setSize(340, 160);
+        this.setSize(340, 180);
         this.setLocationRelativeTo(parent);
         this.setTitle("Grabber");
         this.setIconImage(Icons.image("icon"));
@@ -245,22 +245,39 @@ public class JGrabFrame extends JFrame {
 
         panelBase.add(Box.createVerticalStrut(5));
 
-        JPanel panelComboBox = new JPanel();
-        panelComboBox.setLayout(new BoxLayout(panelComboBox, BoxLayout.X_AXIS));
-        panelComboBox.add(Box.createHorizontalStrut(32));
-        JLabel label = new JLabel("Write format: ");
+        JPanel panelClassName = new JPanel();
+        panelClassName.setLayout(new BoxLayout(panelClassName, BoxLayout.X_AXIS));
+        panelClassName.add(Box.createHorizontalStrut(32));
+        JLabel label = new JLabel("Class name format: ");
         label.setFont(label.getFont().deriveFont(12.0F));
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
-        panelComboBox.add(label);
+        panelClassName.add(label);
         String[] options = {"Full package", "Package + Class name", "Just class name"};
         JComboBox<String> comboBox = new JComboBox<>(options);
-        comboBox.setSelectedIndex(this.config.grabConfig().lastWriteFormat);
-        comboBox.setFocusable(false);
+        comboBox.setSelectedIndex(this.config.grabConfig().lastClassNameType);
         comboBox.setMaximumSize(new Dimension(400, 22));
-        panelComboBox.setMaximumSize(new Dimension(400, 22));
-        panelComboBox.add(comboBox);
-        panelComboBox.add(Box.createHorizontalStrut(32));
-        panelBase.add(panelComboBox);
+        panelClassName.setMaximumSize(new Dimension(400, 22));
+        panelClassName.add(comboBox);
+        panelClassName.add(Box.createHorizontalStrut(32));
+        panelBase.add(panelClassName);
+
+        panelBase.add(Box.createVerticalStrut(5));
+
+        JPanel panelWriteType = new JPanel();
+        panelWriteType.setLayout(new BoxLayout(panelWriteType, BoxLayout.X_AXIS));
+        panelWriteType.add(Box.createHorizontalStrut(32));
+        JLabel label1 = new JLabel("Write mode: ");
+        label1.setFont(label1.getFont().deriveFont(12.0F));
+        label1.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
+        panelWriteType.add(label1);
+        String[] options1 = {"Rewrite output", "Add to output (rewrite exist)", "Add to output (skip exist)"};
+        JComboBox<String> comboBox1 = new JComboBox<>(options1);
+        comboBox1.setSelectedIndex(this.config.grabConfig().lastWriteType);
+        comboBox1.setMaximumSize(new Dimension(400, 22));
+        panelWriteType.setMaximumSize(new Dimension(400, 22));
+        panelWriteType.add(comboBox1);
+        panelWriteType.add(Box.createHorizontalStrut(32));
+        panelBase.add(panelWriteType);
 
         panelBase.add(Box.createVerticalStrut(10));
 
@@ -270,29 +287,31 @@ public class JGrabFrame extends JFrame {
         JCheckBox checkBox = new JCheckBox("Save preset for next grab");
         checkBox.setSelected(this.config.grabConfig().checkBoxState);
         panelButtonGrab.add(checkBox);
-        panelButtonGrab.add(checkBox);
         panelButtonGrab.add(Box.createHorizontalGlue());
         JButton buttonGrab = new JButton("Grab");
         buttonGrab.addActionListener(e -> {
-            IGrabStartData.WriteType type = IGrabStartData.WriteType.values()[comboBox.getSelectedIndex()];
+            IGrabStartData.ClassNameType classNameType = IGrabStartData.ClassNameType.values()[comboBox.getSelectedIndex()];
+            IGrabStartData.WriteType writeType = IGrabStartData.WriteType.values()[comboBox1.getSelectedIndex()];
             File output = this.fixFileIfNeeded(new File(field.getText()));
-            if (output.getParentFile() == null || output.getParentFile().exists()) {
+            if (!field.getText().trim().isEmpty() && (output.getParentFile() == null || output.getParentFile().exists())) {
                 field.setText(output.toString());
                 GrabConfig data = this.config.grabConfig();
                 if (checkBox.isSelected()) {
                     data.lastSaveFolder = field.getText();
-                    data.lastWriteFormat = comboBox.getSelectedIndex();
+                    data.lastClassNameType = comboBox.getSelectedIndex();
+                    data.lastWriteType = comboBox1.getSelectedIndex();
                     data.checkBoxState = true;
                 } else {
                     data.lastSaveFolder = "";
-                    data.lastWriteFormat = 0;
+                    data.lastClassNameType = 0;
+                    data.lastWriteType = 0;
                     data.checkBoxState = false;
                 }
                 this.config.save();
                 this.output = output;
-                this.grabListenBuss.listen(new GrabData(type, output));
+                this.grabListenBuss.listen(new GrabData(writeType, classNameType, output));
             } else {
-                JOptionPane.showMessageDialog(this, "This path does not exist", "Grabb error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "This path does not exist", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         panelButtonGrab.add(buttonGrab);
@@ -489,17 +508,24 @@ public class JGrabFrame extends JFrame {
     }
 
     private static class GrabData implements IGrabStartData {
-        private final WriteType type;
+        private final WriteType writeType;
+        private final ClassNameType type;
         private final File file;
 
-        private GrabData(WriteType type, File file) {
+        private GrabData(WriteType writeType, ClassNameType type, File file) {
+            this.writeType = writeType;
             this.type = type;
             this.file = file;
         }
 
         @Override
-        public WriteType type() {
+        public ClassNameType cnType() {
             return this.type;
+        }
+
+        @Override
+        public WriteType writeType() {
+            return this.writeType;
         }
 
         @Override

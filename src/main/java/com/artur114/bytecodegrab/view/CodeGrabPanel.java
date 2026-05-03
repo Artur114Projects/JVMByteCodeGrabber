@@ -12,10 +12,13 @@ import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
 import java.util.List;
 
 public class CodeGrabPanel extends JPanel {
@@ -199,6 +202,8 @@ public class CodeGrabPanel extends JPanel {
 
         grabTree.setDefaultPopupMenu(popupMenuDef);
         grabTree.setComponentPopupMenu(popupMenu);
+        grabTree.tree.setDragEnabled(true);
+        grabTree.tree.setTransferHandler(new TreeDropHandler());
 
         return panel;
     }
@@ -349,6 +354,8 @@ public class CodeGrabPanel extends JPanel {
 
         inputTree.setDefaultPopupMenu(popupMenuDef);
         inputTree.setComponentPopupMenu(popupMenu);
+        inputTree.tree.setDragEnabled(true);
+        inputTree.tree.setTransferHandler(new TreeDragHandler());
 
         return panelInput;
     }
@@ -453,5 +460,66 @@ public class CodeGrabPanel extends JPanel {
 
         frame.view();
         this.grabFrame = frame;
+    }
+
+    private static class TreeDragHandler extends TransferHandler {
+        @Override
+        public int getSourceActions(JComponent c) {
+            return TransferHandler.COPY;
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            JClassTree classTree = (JClassTree) SwingUtilities.getAncestorOfClass(JClassTree.class, c);
+
+            if (classTree == null) {
+                return null;
+            }
+
+            List<String> classNames = classTree.selectedClasses();
+
+            if (classNames.isEmpty()) {
+                return null;
+            }
+
+            return new StringSelection(String.join("\n", classNames));
+        }
+    }
+
+    private static class TreeDropHandler extends TransferHandler {
+        @Override
+        public boolean canImport(TransferSupport support) {
+            JClassTree targetPanel = (JClassTree) SwingUtilities.getAncestorOfClass(JClassTree.class, support.getComponent());
+            if (support.isDataFlavorSupported(DataFlavor.stringFlavor) && targetPanel != null) {
+                support.setShowDropLocation(false);
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!this.canImport(support)) {
+                return false;
+            }
+            try {
+                JClassTree targetPanel = (JClassTree) SwingUtilities.getAncestorOfClass(JClassTree.class, support.getComponent());
+                String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+                List<String> classNames = Arrays.asList(data.split("\n"));
+
+
+                if (targetPanel == null) {
+                    return false;
+                }
+
+                targetPanel.addClassNames(classNames);
+
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
+            return false;
+        }
     }
 }

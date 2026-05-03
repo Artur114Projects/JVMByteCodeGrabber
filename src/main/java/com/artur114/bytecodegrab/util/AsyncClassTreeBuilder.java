@@ -235,15 +235,15 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         }
 
         if (hasIndex >= info.pack.size()) {
-            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(nodeName));
+            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(context.subList(0, hasIndex), nodeName));
             from.add(ret);
             return ret;
         }
 
-        DefaultMutableTreeNode norm = new DefaultMutableTreeNode(new JClassTree.PackageInfo(info.pack.subList(0, hasIndex)));
+        DefaultMutableTreeNode norm = new DefaultMutableTreeNode(new JClassTree.PackageInfo(context.subList(0, index), info.pack.subList(0, hasIndex)));
         this.replaceNode(from, norm);
-        this.insertNext(norm, new DefaultMutableTreeNode(new JClassTree.PackageInfo(info.pack.subList(hasIndex, info.pack.size()))));
-        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(nodeName));
+        this.insertNext(norm, new DefaultMutableTreeNode(new JClassTree.PackageInfo(this.mergeLists(context.subList(0, index), info.pack.subList(0, hasIndex)), info.pack.subList(hasIndex, info.pack.size()))));
+        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(context.subList(0, hasIndex), nodeName));
         norm.add(ret);
 
         return ret;
@@ -280,23 +280,22 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         DefaultMutableTreeNode n = this.childPackage(node, context);
         if (n != null) return n;
         JClassTree.PackageInfo nodeInfo = ((JClassTree.PackageInfo) node.getUserObject());
-        if (nodeInfo.isCompressed() && context.size() > 1 && nodeInfo.hasPackage(context.get(context.size() - 2))) {
+        if (nodeInfo.isCompressed() && context.size() > 1 && nodeInfo.hasPackage(context.subList(0, context.size() - 2))) {
             return this.branch(node, context);
         } else {
-            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(packageName));
+            DefaultMutableTreeNode ret = new DefaultMutableTreeNode(new JClassTree.PackageInfo(context.subList(0, context.size() - 1), packageName));
             node.add(ret);
             return ret;
         }
     }
 
     private @Nullable DefaultMutableTreeNode childPackage(DefaultMutableTreeNode node, List<String> context) {
-        String packageName = context.get(context.size() - 1);
-        if (node.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) node.getUserObject()).hasPackage(packageName)) {
+        if (node.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) node.getUserObject()).hasPackage(context)) {
             return node;
         }
         for (int i = 0; i != node.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
-            if (child.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) child.getUserObject()).hasPackage(packageName)) {
+            if (child.getUserObject() instanceof JClassTree.PackageInfo && ((JClassTree.PackageInfo) child.getUserObject()).hasPackage(context)) {
                 return child;
             }
         }
@@ -341,6 +340,14 @@ public class AsyncClassTreeBuilder extends SwingWorkerListened<DefaultMutableTre
         List<DefaultMutableTreeNode> ret = new ArrayList<>(node.getChildCount());
         for (int i = 0; i != node.getChildCount(); i++) {
             ret.add((DefaultMutableTreeNode) node.getChildAt(i));
+        }
+        return ret;
+    }
+
+    private <T> List<T> mergeLists(List<T>... lists) {
+        List<T> ret = new ArrayList<>();
+        for (List<T> list : lists) {
+            ret.addAll(list);
         }
         return ret;
     }
